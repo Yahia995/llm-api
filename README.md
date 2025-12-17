@@ -1,8 +1,8 @@
-# LLM API with FastAPI (Async Version)
+# LLM API with FastAPI (Async & Configurable Version)
 
-This project demonstrates a minimal Large Language Model (LLM) API built using *FastAPI* and connected to a locally running LLM served by *Ollama*.
+This project demonstrates a minimal Large Language Model (LLM) API built using **FastAPI** and connected to a locally running LLM served by **Ollama**.
 
-The current version focuses on establishing a *working, clean, and extensible async API foundation*.
+The current version focuses on establishing a **working, clean, extensible async API foundation** with centralized environment-based configuration.
 Future versions will progressively add background task processing, model tracking, and containerized deployment.
 
 ---
@@ -10,7 +10,8 @@ Future versions will progressively add background task processing, model trackin
 ## 🚀 Features (Current Version)
 
 * FastAPI REST API with async endpoints
-* Async integration with a local LLM via Ollama using *httpx*
+* Async integration with a local LLM via Ollama using **httpx**
+* Centralized configuration via environment variables and `.env` files using **pydantic-settings**
 * Returns raw model output including metadata
 * Simple and clean architecture ready for extension
 
@@ -22,6 +23,7 @@ Future versions will progressively add background task processing, model trackin
 * FastAPI
 * Uvicorn
 * httpx (async HTTP client)
+* pydantic-settings for configuration
 * Ollama (local LLM runtime)
 
 ---
@@ -30,7 +32,7 @@ Future versions will progressively add background task processing, model trackin
 
 * Python 3.10 or higher
 * Ollama installed and running
-* A model pulled in Ollama (example: llama3)
+* A model pulled in Ollama (example: `llama3`)
 
 To pull the model:
 
@@ -52,6 +54,15 @@ Clone the repository and install dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Create a `.env` file in the project root:
+
+```env
+OLLAMA_URL=http://localhost:11434/api/generate
+REDIS_URL=redis://localhost:6379/0
+MLFLOW_TRACKING_URI=http://localhost:5000
+HUGGING_FACE_TOKEN=your_huggingface_token_here
 ```
 
 Run the API:
@@ -84,6 +95,7 @@ FastAPI automatically provides interactive documentation:
 Generate text using the LLM.
 
 #### Request Body
+
 ```json
 {
   "prompt": "What is 2 * 2?"
@@ -107,13 +119,13 @@ Generate text using the LLM.
 > The API returns the **raw Ollama response**, including performance and evaluation metadata.
 > This design enables future integration with monitoring and experiment tracking tools.
 
-
 ---
 
 ## 🛠️ Project Status
 
 ✅ Async Ollama integration with httpx completed
 ✅ Async FastAPI endpoints in place
+✅ Centralized environment-based configuration using pydantic-settings
 ✅ Local LLM inference working
 ✅ API ready for extension
 
@@ -131,5 +143,5 @@ Generate text using the LLM.
 
 ## 📌 Notes
 
-This repository follows an *incremental development approach*.
+This repository follows an **incremental development approach**.
 Each new feature is introduced in separate commits or branches to clearly demonstrate the system’s evolution.

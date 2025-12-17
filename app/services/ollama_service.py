@@ -1,6 +1,5 @@
 import httpx
-
-OLLAMA_URL = "http://localhost:11434/api/generate"
+from app.core.config import settings
 
 async def generate_with_ollama(prompt: str):
     payload = {
@@ -10,7 +9,7 @@ async def generate_with_ollama(prompt: str):
     }
 
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(OLLAMA_URL, json=payload)
+        response = await client.post(settings.OLLAMA_URL, json=payload)
 
     response.raise_for_status()
     return response.json()
