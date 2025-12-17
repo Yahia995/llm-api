@@ -34,11 +34,15 @@ Future versions will progressively add background task processing, model trackin
 
 To pull the model:
 
+```bash
 ollama pull llama3
+```
 
 To start Ollama:
 
+```bash
 ollama serve
+```
 
 ---
 
@@ -46,15 +50,21 @@ ollama serve
 
 Clone the repository and install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
 Run the API:
 
+```bash
 uvicorn app.main:app --reload
+```
 
 The API will be available at:
 
+```
 http://localhost:8000
+```
 
 ---
 
@@ -74,13 +84,15 @@ FastAPI automatically provides interactive documentation:
 Generate text using the LLM.
 
 #### Request Body
-
+```json
 {
   "prompt": "What is 2 * 2?"
 }
+```
 
 #### Response Example
 
+```json
 {
   "model": "llama3",
   "created_at": "2025-12-17T11:51:13.4254271Z",
@@ -90,9 +102,10 @@ Generate text using the LLM.
   "prompt_eval_count": 17,
   "eval_count": 9
 }
+```
 
-The API returns the **raw Ollama response**, including performance and evaluation metadata.
-This design enables future integration with monitoring and experiment tracking tools.
+> The API returns the **raw Ollama response**, including performance and evaluation metadata.
+> This design enables future integration with monitoring and experiment tracking tools.
 
 
 ---
