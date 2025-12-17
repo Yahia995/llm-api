@@ -1,48 +1,44 @@
-# LLM API with FastAPI (Initial Version)
+# LLM API with FastAPI (Async Version)
 
-This project demonstrates a minimal Large Language Model (LLM) API built using **FastAPI** and connected to a locally running LLM served by **Ollama**.
+This project demonstrates a minimal Large Language Model (LLM) API built using *FastAPI* and connected to a locally running LLM served by *Ollama*.
 
-The current version focuses on establishing a **working, clean, and extensible API foundation**.  
+The current version focuses on establishing a *working, clean, and extensible async API foundation*.
 Future versions will progressively add background task processing, model tracking, and containerized deployment.
 
 ---
 
 ## 🚀 Features (Current Version)
 
-- FastAPI REST API
-- Text generation endpoint
-- Integration with a local LLM via Ollama
-- Returns raw model output including metadata
-- Simple and clean architecture ready for extension
+* FastAPI REST API with async endpoints
+* Async integration with a local LLM via Ollama using *httpx*
+* Returns raw model output including metadata
+* Simple and clean architecture ready for extension
 
 ---
 
-## 🧠 Technology Stack (Initial)
+## 🧠 Technology Stack (Current)
 
-- Python 3.10+
-- FastAPI
-- Uvicorn
-- Requests
-- Ollama (local LLM runtime)
+* Python 3.10+
+* FastAPI
+* Uvicorn
+* httpx (async HTTP client)
+* Ollama (local LLM runtime)
 
 ---
 
 ## 📦 Prerequisites
 
-- Python 3.10 or higher
-- Ollama installed and running
-- A model pulled in Ollama (example: `llama3`)
+* Python 3.10 or higher
+* Ollama installed and running
+* A model pulled in Ollama (example: llama3)
 
 To pull the model:
-```bash
+
 ollama pull llama3
-````
 
 To start Ollama:
 
-```bash
 ollama serve
-```
 
 ---
 
@@ -50,21 +46,15 @@ ollama serve
 
 Clone the repository and install dependencies:
 
-```bash
 pip install -r requirements.txt
-```
 
 Run the API:
 
-```bash
-uvicorn main:app --reload
-```
+uvicorn app.main:app --reload
 
 The API will be available at:
 
-```
 http://localhost:8000
-```
 
 ---
 
@@ -79,21 +69,18 @@ FastAPI automatically provides interactive documentation:
 
 ## 🔹 API Endpoint
 
-### POST `/generate`
+### POST /generate
 
 Generate text using the LLM.
 
 #### Request Body
 
-```json
 {
   "prompt": "What is 2 * 2?"
 }
-```
 
 #### Response Example
 
-```json
 {
   "model": "llama3",
   "created_at": "2025-12-17T11:51:13.4254271Z",
@@ -103,16 +90,17 @@ Generate text using the LLM.
   "prompt_eval_count": 17,
   "eval_count": 9
 }
-```
 
-> The API intentionally returns the **raw Ollama response**, including performance and evaluation metadata.
-> This design enables future integration with monitoring and experiment tracking tools.
+The API returns the **raw Ollama response**, including performance and evaluation metadata.
+This design enables future integration with monitoring and experiment tracking tools.
+
 
 ---
 
 ## 🛠️ Project Status
 
-✅ Initial version completed
+✅ Async Ollama integration with httpx completed
+✅ Async FastAPI endpoints in place
 ✅ Local LLM inference working
 ✅ API ready for extension
 
@@ -120,16 +108,15 @@ Generate text using the LLM.
 
 ## 🔮 Planned Enhancements (Next Versions)
 
-* Asynchronous request handling
-* Celery + Redis for background tasks
-* Docker & Docker Compose setup
-* MLflow integration for model tracking
-* Hugging Face model registry support
-* Authentication and rate limiting
+* Celery + Redis for background task processing
+* Docker & Docker Compose for containerized deployment
+* MLflow integration for model tracking and experiment management
+* Hugging Face model registry and fallback inference support
+* Authentication, rate limiting, and production hardening
 
 ---
 
 ## 📌 Notes
 
-This repository follows an **incremental development approach**.
-Each new feature will be introduced in separate commits to clearly demonstrate the system’s evolution.
+This repository follows an *incremental development approach*.
+Each new feature is introduced in separate commits or branches to clearly demonstrate the system’s evolution.
