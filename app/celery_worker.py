@@ -1,7 +1,10 @@
+import time
+import asyncio
+import mlflow
 from celery import Celery
+
 from app.core.config import settings
 from app.services.ollama_service import generate_with_ollama
-import asyncio
 
 celery_app = Celery(
     "worker",
@@ -9,7 +12,31 @@ celery_app = Celery(
     backend=settings.REDIS_URL
 )
 
-@celery_app.task(bind=True)
-def generate_task(self, prompt: str):
-    # Since Celery tasks are sync by default, run the async function in an event loop
-    return asyncio.run(generate_with_ollama(prompt))
+# Windows / WSL SAFE
+celery_app.conf.worker_pool = "solo"
+celery_app.conf.worker_concurrency = 1
+
+mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
+mlflow.set_experiment("llm-inference")
+
+
+@celery_app.task(name="generate_task")
+def generate_task(prompt: str):
+    start = time.time()
+
+    with mlflow.start_run():
+        mlflow.log_param("model", "llama3")
+        mlflow.log_param("prompt", prompt)
+
+        # Run async code inside Celery
+        result = asyncio.run(generate_with_ollama(prompt))
+
+        latency = time.time() - start
+        mlflow.log_metric("latency_sec", latency)
+
+        mlflow.log_text(
+            result.get("response", ""),
+            artifact_file="response.txt"
+        )
+
+        return result
