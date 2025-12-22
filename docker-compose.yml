@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   redis:
     image: redis:7
@@ -7,26 +5,34 @@ services:
     ports:
       - "6379:6379"
 
+  mlflow:
+    build: ./mlflow
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow/mlruns:/mlflow/mlruns
   api:
     build: .
-    container_name: fastapi
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
+    container_name: llm_api
     env_file:
       - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
     depends_on:
       - redis
+      - mlflow
 
   worker:
     build: .
-    container_name: celery_worker
-    command: celery -A app.celery_worker worker --loglevel=info --pool=solo
+    container_name: llm_worker
+    command: celery -A app.celery_worker worker --pool=solo --loglevel=info
     env_file:
       - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
+      - mlflow

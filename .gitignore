@@ -12,6 +12,7 @@ venv/
 # MLflow
 mlruns/
 mlartifacts/
+mlflow.db
 
 # Logs
 *.log

@@ -8,7 +8,7 @@ async def generate_with_ollama(prompt: str):
         "stream": False
     }
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=120) as client:
         response = await client.post(settings.OLLAMA_URL, json=payload)
 
     response.raise_for_status()
