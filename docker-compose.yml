@@ -4,6 +4,26 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - llm-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - llm-network
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve & 
+        sleep 5
+        ollama pull llama3
+        wait
+    restart: unless-stopped
 
   mlflow:
     build: ./mlflow
@@ -12,18 +32,22 @@ services:
       - "5000:5000"
     volumes:
       - ./mlflow/mlruns:/mlflow/mlruns
+    networks:
+      - llm-network
+
   api:
     build: .
     container_name: llm_api
     env_file:
       - .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     depends_on:
       - redis
       - mlflow
+      - ollama
+    networks:
+      - llm-network
 
   worker:
     build: .
@@ -31,8 +55,18 @@ services:
     command: celery -A app.celery_worker worker --pool=solo --loglevel=info
     env_file:
       - .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./mlflow/mlruns:/mlflow/mlruns 
     depends_on:
       - redis
       - mlflow
+      - ollama
+    networks:
+      - llm-network
+
+networks:
+  llm-network:
+    driver: bridge
+
+volumes:
+  ollama-data:

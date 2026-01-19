@@ -1,23 +1,30 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from app.models.schemas import Prompt
 from app.celery_worker import generate_task
 from celery.result import AsyncResult
-from app.core.config import settings
 
 router = APIRouter()
 
 @router.post("/generate")
-def generate_text(data: Prompt):
+async def generate(data: Prompt):
+    """Dispatch LLM generation task to Celery"""
     task = generate_task.delay(data.prompt)
-    return {"task_id": task.id}
+    return {
+        "task_id": task.id,
+        "status": "Task submitted",
+        "check_url": f"/status/{task.id}"
+    }
 
-@router.get("/result/{task_id}")
-def get_result(task_id: str):
-    result = AsyncResult(task_id, app=generate_task.app)
-    if result.ready():
-        if result.successful():
-            return {"status": "done", "result": result.result}
-        else:
-            return {"status": "failed", "error": str(result.result)}
+@router.get("/status/{task_id}")
+async def get_status(task_id: str):
+    """Check task status and get results"""
+    task = AsyncResult(task_id)
+    
+    if task.state == "PENDING":
+        return {"task_id": task_id, "status": "PENDING", "result": None}
+    elif task.state == "PROGRESS":
+        return {"task_id": task_id, "status": "PROGRESS", "result": task.info}
+    elif task.state == "SUCCESS":
+        return {"task_id": task_id, "status": "SUCCESS", "result": task.result}
     else:
-        return {"status": "pending"}
+        return {"task_id": task_id, "status": task.state, "error": str(task.info)}

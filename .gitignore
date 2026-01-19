@@ -1,32 +1,12 @@
-# Python
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-
-# Virtual environments
 venv/
-.env/
-.env.*
-
-# MLflow
+.env
+.git/
+.gitignore
 mlruns/
-mlartifacts/
+mlflow/mlruns/
 mlflow.db
-
-# Logs
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Docker
-*.tar
-
-# IDE
-.vscode/
-.idea/
-
-# Celery
-celerybeat-schedule
+mlflow/mlflow.db
+*.db
+*.db-shm
+*.db-wal
