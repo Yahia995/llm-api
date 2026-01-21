@@ -1,4 +1,8 @@
+<div align="center">
+
 # LLM API with FastAPI (Async + Celery + MLflow Version)
+
+</div>
 
 This project demonstrates a minimal **Large Language Model (LLM) API** built using **FastAPI** and connected to a locally running LLM served by **Ollama**.
 
