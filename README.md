@@ -1,136 +1,335 @@
 <div align="center">
 
-# LLM API with FastAPI (Async + Celery + MLflow Version)
+# 🚀 LLM API Platform
+
+### Production-Ready AI Inference Service with Async Processing & MLOps
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Celery](https://img.shields.io/badge/celery-%23a9cc54.svg?style=for-the-badge&logo=celery&logoColor=ddf4a4)](https://docs.celeryproject.org/)
+[![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![MLflow](https://img.shields.io/badge/MLflow-0194E2?style=for-the-badge&logo=mlflow&logoColor=white)](https://mlflow.org/)
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [API Docs](#-api-reference) • [Contributing](#-contributing)
 
 </div>
 
-This project demonstrates a minimal **Large Language Model (LLM) API** built using **FastAPI** and connected to a locally running LLM served by **Ollama**.
+---
 
-The current version introduces **background task processing** using **Celery** and **Redis**, enabling non-blocking LLM inference and improved scalability, along with **MLflow integration** for experiment tracking and monitoring inference jobs.
+## 📋 Table of Contents
 
-**NEW**: Ollama is now fully containerized with automatic model pulling and persistent storage!
-
-The project follows an **incremental development approach**, with each feature added in isolated commits.
+- [Overview](#-overview)
+- [Features](#-features)
+- [Architecture](#-architecture)
+  - [System Overview](#system-overview)
+  - [Container Architecture](#container-architecture)
+  - [Request Flow Sequence](#request-flow-sequence)
+  - [Data Flow](#data-flow)
+- [Quick Start](#-quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Access Points](#access-points)
+- [API Reference](#-api-reference)
+  - [Generate Text](#generate-text)
+  - [Check Status](#check-status)
+  - [Python Client Example](#python-client-example)
+- [Configuration](#-configuration)
+  - [Environment Variables](#environment-variables)
+  - [Docker Compose Configuration](#docker-compose-configuration)
+- [Monitoring & MLOps](#-monitoring--mlops)
+  - [MLflow Dashboard](#mlflow-dashboard)
+  - [Tracked Metrics](#tracked-metrics)
+- [Development](#-development)
+  - [Project Structure](#project-structure)
+  - [Local Development](#local-development)
+  - [Testing](#testing)
+- [Troubleshooting](#-troubleshooting)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## 🚀 Features (Current Version)
+## 🎯 Overview
 
-* ✅ **FastAPI REST API**
-* ✅ **Async endpoints** using `httpx`
-* ✅ **Background LLM inference** using Celery
-* ✅ **Redis** as message broker and result backend
-* ✅ **Task-based request handling** with result polling
-* ✅ **Centralized configuration** using environment variables
-* ✅ **Returns raw model output** including metadata
-* ✅ **Fully containerized stack** - no host dependencies
-* ✅ **Windows/WSL2-compatible** Celery configuration (solo pool)
-* ✅ **MLflow integration** for tracking inference requests, parameters, latency, and artifacts
-* ✅ **Containerized Ollama** with automatic model management
-* ✅ **Persistent model storage** via Docker volumes
+A **production-grade Large Language Model API** built with modern best practices, featuring asynchronous processing, distributed task queues, and comprehensive MLOps integration. Perfect for building scalable AI applications with zero host dependencies.
+
+### Why This Project?
+
+- ✨ **Zero Configuration**: One command deployment with Docker Compose
+- 🔄 **Async Architecture**: Non-blocking inference with Celery workers
+- 📊 **Built-in MLOps**: Experiment tracking and metrics with MLflow
+- 🐳 **Fully Containerized**: No manual installations required
+- 🎯 **Production Ready**: Battle-tested patterns and error handling
 
 ---
 
-## 🧠 Technology Stack (Current)
+## ✨ Features
 
-* **Python 3.10+**
-* **FastAPI**
-* **Uvicorn**
-* **httpx**
-* **Celery**
-* **Redis**
-* **pydantic-settings**
-* **Ollama** (containerized LLM runtime with auto model download)
-* **MLflow** (experiment tracking & metrics)
-* **Docker & Docker Compose**
+<table>
+<tr>
+<td width="50%">
+
+### Core Capabilities
+
+- 🌐 **REST API** with FastAPI
+- ⚡ **Async Endpoints** using httpx
+- 🔄 **Background Processing** via Celery
+- 📦 **Redis Queue** management
+- 🎯 **Task Polling** system
+- 🔧 **Environment Config** support
+
+</td>
+<td width="50%">
+
+### MLOps & DevOps
+
+- 📊 **MLflow Integration** for tracking
+- 🐳 **Docker Compose** orchestration
+- 💾 **Persistent Storage** for models
+- 🔄 **Auto Model Pull** on startup
+- 🪟 **Windows/WSL2** compatible
+- 📈 **Metrics & Monitoring**
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 🔧 Installation & Setup
+## 🏗️ Architecture
+
+### System Overview
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[Client Application]
+    end
+    
+    subgraph "API Layer"
+        B[FastAPI Server<br/>:8000]
+    end
+    
+    subgraph "Processing Layer"
+        C[Celery Worker<br/>Background Tasks]
+        D[Redis Queue<br/>:6379]
+    end
+    
+    subgraph "AI Layer"
+        E[Ollama LLM<br/>:11434]
+        F[Model Storage<br/>Docker Volume]
+    end
+    
+    subgraph "Monitoring Layer"
+        G[MLflow Server<br/>:5000]
+        H[Metrics DB<br/>SQLite]
+    end
+    
+    A -->|POST /generate| B
+    A -->|GET /status/:id| B
+    B -->|Submit Task| D
+    D -->|Consume Task| C
+    C -->|Inference Request| E
+    E -->|Load Models| F
+    C -->|Log Metrics| G
+    G -->|Store Data| H
+    B -->|Query Status| D
+    
+    style A fill:#e1f5ff,color: #000
+    style B fill:#fff4e1,color: #000
+    style C fill:#f0e1ff,color: #000
+    style D fill:#ffe1e1,color: #000
+    style E fill:#e1ffe1,color: #000
+    style G fill:#ffe1f5,color: #000
+```
+
+### Container Architecture
+
+```mermaid
+graph LR
+    subgraph "Docker Network: llm-network"
+        API[API Container<br/>FastAPI]
+        WORKER[Worker Container<br/>Celery]
+        REDIS[(Redis<br/>Message Broker)]
+        OLLAMA[Ollama<br/>LLM Runtime]
+        MLFLOW[MLflow<br/>Tracking Server]
+
+        %% Invisible spacers
+        SP1[" "]:::spacer
+        SP2[" "]:::spacer
+        SP3[" "]:::spacer
+        
+        API -->|Submit| REDIS
+        WORKER -->|Consume| REDIS
+        WORKER -->|Generate| OLLAMA
+        WORKER -->|Track| MLFLOW
+        API -->|Status| REDIS
+        
+        OLLAMA -.->|Persist| VOL[ollama-data<br/>Volume]
+    end
+    
+    CLIENT([External Client]) -->|HTTP :8000| API
+    USER([Developer]) -->|UI :5000| MLFLOW
+
+    classDef spacer fill:none,stroke:none
+    
+    style API fill:#4CAF50,color:#fff
+    style WORKER fill:#2196F3,color:#fff
+    style REDIS fill:#DC382D,color:#fff
+    style OLLAMA fill:#000,color:#fff
+    style MLFLOW fill:#0194E2,color:#fff
+```
+
+### Request Flow Sequence
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as FastAPI
+    participant R as Redis
+    participant W as Celery Worker
+    participant O as Ollama
+    participant M as MLflow
+    
+    C->>API: POST /generate
+    activate API
+    API->>R: Submit task to queue
+    API-->>C: Return task_id
+    deactivate API
+    
+    Note over R,W: Background Processing
+    
+    W->>R: Poll for tasks
+    R-->>W: Retrieve task
+    activate W
+    
+    W->>M: Start run logging
+    W->>O: Send inference request
+    activate O
+    O-->>W: Return generated text
+    deactivate O
+    
+    W->>M: Log metrics & artifacts
+    W->>R: Store result
+    deactivate W
+    
+    C->>API: GET /status/:task_id
+    activate API
+    API->>R: Query task status
+    R-->>API: Return result
+    API-->>C: Return response
+    deactivate API
+```
+
+### Data Flow
+
+```mermaid
+flowchart TD
+    Start([Client Request]) --> Submit[POST /generate]
+    Submit --> Queue{Redis Queue}
+    Queue -->|Async| Worker[Celery Worker]
+    
+    Worker --> Process{Process Task}
+    Process -->|1| LoadModel[Load LLM Model]
+    Process -->|2| Generate[Generate Response]
+    Process -->|3| Track[Log to MLflow]
+    
+    Generate --> Store[Store in Redis]
+    Track --> Store
+    
+    Store --> Poll[Client Polls Status]
+    Poll --> Check{Task Complete?}
+    Check -->|No| Wait[Wait & Retry]
+    Wait --> Poll
+    Check -->|Yes| Return[Return Result]
+    
+    Return --> End([Client Receives Response])
+    
+    style Start fill:#e1f5ff,color: #000
+    style Queue fill:#ffe1e1,color: #000
+    style Worker fill:#f0e1ff,color: #000
+    style Store fill:#ffe1e1,color: #000
+    style End fill:#e1ffe1,color: #000
+```
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Docker** and **Docker Compose** installed
-- That's it! No need to install Ollama separately
-
-### Install Python dependencies (for local development only):
-
 ```bash
-pip install -r requirements.txt
+# Only requirement
+docker --version  # Docker 20.10+
+docker compose version  # v2.0+
 ```
 
-### Create `.env` file:
+### Installation
 
-```env
+```bash
+# 1. Clone the repository
+git clone https://github.com/Yahia995/llm-api.git
+cd llm-api
+
+# 2. Create environment configuration
+cat > .env << EOF
 OLLAMA_URL=http://ollama:11434/api/generate
 REDIS_URL=redis://redis:6379/0
 MLFLOW_TRACKING_URI=http://mlflow:5000
-```
+EOF
 
-**Note**: All services communicate via Docker network using service names (e.g., `ollama`, `redis`, `mlflow`)
-
----
-
-## ▶️ Running the Application
-
-### Start Everything with Docker Compose
-
-```bash
+# 3. Start all services
 docker compose up --build
 ```
 
-This single command starts:
-
-* **Redis** (message broker)
-* **Ollama** (LLM runtime - automatically pulls llama3 model on first run)
-* **MLflow** (experiment tracking & metrics UI)
-* **FastAPI API** (web server)
-* **Celery worker** (background task processor)
-
-**First-time setup**: Ollama will automatically download the llama3 model (~4.7GB). This takes a few minutes depending on your internet connection.
-
-**Subsequent runs**: Models are persisted in a Docker volume, so they don't need to be re-downloaded.
-
----
-
-### Access the Services
-
-* **FastAPI API**: http://localhost:8000
-* **API Documentation (Swagger)**: http://localhost:8000/docs
-* **MLflow UI**: http://localhost:5000
-* **Ollama API** (direct access): http://localhost:11434
-
----
-
-## 📖 API Documentation
-
-### Interactive Swagger UI:
-
-👉 **[http://localhost:8000/docs](http://localhost:8000/docs)**
-
----
-
-## 🔹 API Endpoints
-
-### `POST /generate`
-
-Submit a text generation request.
-
-#### Request
+**First Run:** On first startup, Ollama will automatically download the llama3 model (~4.7GB). This takes 3-5 minutes depending on your connection.
 
 ```bash
+# Monitor the download progress
+docker compose logs -f ollama
+```
+
+**Verification:**
+
+```bash
+# Check all services are running
+docker compose ps
+
+# Test the API
 curl -X POST http://localhost:8000/generate \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Explain Celery in one sentence"}'
+  -d '{"prompt": "Hello, world!"}'
 ```
+
+### Access Points
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| 🌐 API | http://localhost:8000 | REST API endpoint |
+| 📚 Swagger | http://localhost:8000/docs | Interactive API docs |
+| 📊 MLflow | http://localhost:5000 | Experiment tracking UI |
+| 🤖 Ollama | http://localhost:11434 | Direct LLM access |
+
+---
+
+## 📡 API Reference
+
+### Generate Text
+
+Submit an LLM inference task for background processing.
+
+**Endpoint:** `POST /generate`
+
+**Request Body:**
 
 ```json
 {
-  "prompt": "Explain Celery in one sentence"
+  "prompt": "Explain quantum computing in simple terms"
 }
 ```
 
-#### Response
+**Response:**
 
 ```json
 {
@@ -140,19 +339,32 @@ curl -X POST http://localhost:8000/generate \
 }
 ```
 
----
-
-### `GET /status/{task_id}`
-
-Retrieve task status and result.
-
-#### Request
+**cURL Example:**
 
 ```bash
-curl http://localhost:8000/status/a72a58c5-96d4-4052-bdb8-80a923faca4f
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "What is FastAPI?"}'
 ```
 
-#### Response (Completed)
+---
+
+### Check Status
+
+Retrieve the status and result of a submitted task.
+
+**Endpoint:** `GET /status/{task_id}`
+
+**Response States:**
+
+| Status | Description | Example Response |
+|--------|-------------|------------------|
+| `PENDING` | Task queued, not started | `{"task_id": "...", "status": "PENDING", "result": null}` |
+| `PROGRESS` | Task in progress | `{"task_id": "...", "status": "PROGRESS", "result": {...}}` |
+| `SUCCESS` | Task completed | `{"task_id": "...", "status": "SUCCESS", "result": {...}}` |
+| `FAILURE` | Task failed | `{"task_id": "...", "status": "FAILURE", "error": "..."}` |
+
+**Success Response Example:**
 
 ```json
 {
@@ -160,7 +372,7 @@ curl http://localhost:8000/status/a72a58c5-96d4-4052-bdb8-80a923faca4f
   "status": "SUCCESS",
   "result": {
     "model": "llama3",
-    "response": "Celery is a distributed task queue used for background processing in Python applications.",
+    "response": "FastAPI is a modern, fast web framework for building APIs with Python...",
     "created_at": "2025-01-19T10:30:00.000000Z",
     "done": true,
     "total_duration": 1523456789,
@@ -171,143 +383,53 @@ curl http://localhost:8000/status/a72a58c5-96d4-4052-bdb8-80a923faca4f
 }
 ```
 
-#### Response (Pending)
+**cURL Example:**
 
-```json
-{
-  "task_id": "a72a58c5-96d4-4052-bdb8-80a923faca4f",
-  "status": "PENDING",
-  "result": null
-}
-```
-
-#### Response (In Progress)
-
-```json
-{
-  "task_id": "a72a58c5-96d4-4052-bdb8-80a923faca4f",
-  "status": "PROGRESS",
-  "result": {
-    "current": 50,
-    "total": 100
-  }
-}
-```
-
-#### Response (Failed)
-
-```json
-{
-  "task_id": "a72a58c5-96d4-4052-bdb8-80a923faca4f",
-  "status": "FAILURE",
-  "error": "Connection timeout to Ollama service"
-}
+```bash
+curl http://localhost:8000/status/a72a58c5-96d4-4052-bdb8-80a923faca4f
 ```
 
 ---
 
-## 🐳 Docker Architecture
+### Python Client Example
 
-### Container Architecture
+```python
+import requests
+import time
 
-```
-┌─────────────────────────────────────────────────┐
-│         Docker Network (llm-network)            │
-│                                                 │
-│  ┌──────────┐     ┌──────────┐                  │
-│  │   API    │───▶│  Worker  │                  │
-│  │  :8000   │     │  (Celery)│                  │
-│  └────┬─────┘     └─────┬────┘                  │
-│       │                 │                       │
-│       ├─────── ─────────┼──────────┐            │
-│       │                 │          │            │
-│  ┌────▼─────┐     ┌─────▼────┐  ┌──▼───────┐    │
-│  │  Redis   │     │  Ollama  │  │  MLflow  │    │
-│  │  :6379   │     │  :11434  │  │  :5000   │    │
-│  └──────────┘     └─────┬────┘  └──────────┘    │
-│                         │                       │
-│                   ┌─────▼──────┐                │
-│                   │ ollama-data│ (volume)       │
-│                   │  (models)  │                │
-│                   └────────────┘                │
-└─────────────────────────────────────────────────┘
-```
+class LLMClient:
+    def __init__(self, base_url="http://localhost:8000"):
+        self.base_url = base_url
+    
+    def generate(self, prompt: str, timeout: int = 60):
+        """Submit task and wait for result"""
+        # Submit task
+        response = requests.post(
+            f"{self.base_url}/generate",
+            json={"prompt": prompt}
+        )
+        task_id = response.json()["task_id"]
+        
+        # Poll for result
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = requests.get(
+                f"{self.base_url}/status/{task_id}"
+            ).json()
+            
+            if status["status"] == "SUCCESS":
+                return status["result"]["response"]
+            elif status["status"] == "FAILURE":
+                raise Exception(status["error"])
+            
+            time.sleep(2)
+        
+        raise TimeoutError("Task did not complete in time")
 
-### docker-compose.yml
-
-```yaml
-services:
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-    networks:
-      - llm-network
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    networks:
-      - llm-network
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        ollama serve & 
-        sleep 5
-        ollama pull llama3
-        wait
-    restart: unless-stopped
-
-  mlflow:
-    build: ./mlflow
-    container_name: mlflow
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlflow/mlruns:/mlflow/mlruns
-    networks:
-      - llm-network
-
-  api:
-    build: .
-    container_name: llm_api
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-      - mlflow
-      - ollama
-    networks:
-      - llm-network
-
-  worker:
-    build: .
-    container_name: llm_worker
-    command: celery -A app.celery_worker worker --pool=solo --loglevel=info
-    env_file:
-      - .env
-    volumes:
-      - ./mlflow/mlruns:/mlflow/mlruns 
-    depends_on:
-      - redis
-      - mlflow
-      - ollama
-    networks:
-      - llm-network
-
-networks:
-  llm-network:
-    driver: bridge
-
-volumes:
-  ollama-data:
+# Usage
+client = LLMClient()
+result = client.generate("Explain Docker in one sentence")
+print(result)
 ```
 
 ---
@@ -316,17 +438,126 @@ volumes:
 
 ### Environment Variables
 
-| Variable              | Description                  | Default                            |
-| --------------------- | ---------------------------- | ---------------------------------- |
-| `OLLAMA_URL`          | Ollama API endpoint          | `http://ollama:11434/api/generate` |
-| `REDIS_URL`           | Redis connection URL         | `redis://redis:6379/0`             |
-| `MLFLOW_TRACKING_URI` | MLflow server tracking URI   | `http://mlflow:5000`               |
+Create a `.env` file in the project root:
 
-**Note**: All URLs use internal Docker service names, not `localhost` or IP addresses.
+```env
+# Ollama Configuration
+OLLAMA_URL=http://ollama:11434/api/generate
+
+# Redis Configuration
+REDIS_URL=redis://redis:6379/0
+
+# MLflow Configuration
+MLFLOW_TRACKING_URI=http://mlflow:5000
+```
+
+**Note:** All services communicate via Docker network using service names (e.g., `ollama`, `redis`, `mlflow`).
+
+### Docker Compose Configuration
+
+Key configurations in `docker-compose.yml`:
+
+```yaml
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-data:/root/.ollama  # Persistent storage
+    command:
+      - |
+        ollama serve & 
+        sleep 5
+        ollama pull llama3  # Auto-download on first run
+        wait
+  
+  worker:
+    command: celery -A app.celery_worker worker --pool=solo --loglevel=info
+    # --pool=solo for Windows/WSL2 compatibility
+```
+
+---
+
+## 📊 Monitoring & MLOps
+
+### MLflow Dashboard
+
+Access the MLflow UI at **http://localhost:5000**
+
+**Features:**
+- 📈 Track inference latency and token counts
+- 🔍 Compare different prompts and responses
+- 💾 Store generated outputs as artifacts
+- 📊 Visualize performance metrics over time
+
+### Tracked Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `latency_sec` | Total inference time |
+| `prompt_eval_count` | Input token count |
+| `eval_count` | Output token count |
+| `total_duration` | Full processing time (ns) |
+
+### Logged Artifacts
+
+- Generated response text
+- Full Ollama metadata
+- Request parameters
+- Timestamp information
+
+### Viewing Experiments
+
+1. Navigate to http://localhost:5000
+2. Click on **Experiments** → **llm_inference**
+3. View all runs with metrics and artifacts
+4. Compare multiple runs side-by-side
 
 ---
 
 ## 🛠️ Development
+
+### Project Structure
+
+```
+llm-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI application
+│   ├── celery_worker.py        # Celery task definitions
+│   ├── core/
+│   │   └── config.py           # Configuration management
+│   ├── api/
+│   │   └── generate.py         # API endpoints
+│   ├── models/
+│   │   └── schemas.py          # Pydantic models
+│   └── services/
+│       └── ollama_service.py   # Ollama client
+├── mlflow/
+│   ├── Dockerfile
+│   └── mlruns/                 # Experiment data
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md
+```
+
+### Local Development
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run services individually
+docker compose up redis ollama mlflow -d
+
+# Run API locally (with hot reload)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run worker locally
+celery -A app.celery_worker worker --loglevel=info
+```
 
 ### Viewing Logs
 
@@ -336,365 +567,347 @@ docker compose logs -f
 
 # Specific service
 docker compose logs -f worker
-docker compose logs -f ollama
 docker compose logs -f api
+docker compose logs -f ollama
+docker compose logs -f mlflow
 ```
 
-### Restarting Services
+### Testing
+
+```bash
+# Quick API test
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Test prompt"}'
+
+# Check task status
+curl http://localhost:8000/status/{task_id}
+```
+
+### Managing Services
 
 ```bash
 # Restart specific service
 docker compose restart worker
 
-# Restart everything
+# Restart all services
 docker compose restart
-```
 
-### Stopping Services
-
-```bash
 # Stop all services (preserves volumes)
 docker compose down
 
-# Stop and remove volumes (deletes downloaded models!)
+# Stop and remove volumes (deletes models!)
 docker compose down -v
-```
 
-### Rebuilding After Code Changes
-
-```bash
+# Rebuild after code changes
 docker compose up --build
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## 🔧 Troubleshooting
 
-### Ollama Model Download Issues
+<details>
+<summary><strong>🚨 Ollama model download fails</strong></summary>
 
-**Problem**: First startup takes forever or fails
+**Symptoms:** First startup hangs or times out
 
-**Solutions**:
-1. Check Ollama logs:
-   ```bash
-   docker compose logs ollama
-   ```
+**Solutions:**
 
-2. Verify internet connection and retry:
-   ```bash
-   docker compose restart ollama
-   ```
-
-3. Manually pull model:
-   ```bash
-   docker compose exec ollama ollama pull llama3
-   ```
-
-### Worker Cannot Connect to Ollama
-
-**Problem**: Tasks fail with connection errors
-
-**Solutions**:
-1. Verify all services are on the same network:
-   ```bash
-   docker network inspect llm-api_llm-network
-   ```
-
-2. Check Ollama is running:
-   ```bash
-   docker compose ps ollama
-   ```
-
-3. Test Ollama from worker container:
-   ```bash
-   docker compose exec worker curl http://ollama:11434/api/tags
-   ```
-
-### Celery Worker Fails on Windows
-
-**Problem**: Worker crashes on startup
-
-**Solution**: The `--pool=solo` flag is already configured in docker-compose.yml for Windows/WSL2 compatibility.
-
-### Redis Connection Refused
-
-**Problem**: Worker or API cannot connect to Redis
-
-**Solutions**:
-1. Check Redis is running:
-   ```bash
-   docker compose ps redis
-   ```
-
-2. Verify Redis logs:
-   ```bash
-   docker compose logs redis
-   ```
-
-### Task Stuck in PENDING
-
-**Problem**: Tasks never complete
-
-**Solutions**:
-1. Check worker is running:
-   ```bash
-   docker compose ps worker
-   ```
-
-2. View worker logs for errors:
-   ```bash
-   docker compose logs worker
-   ```
-
-3. Verify worker can reach Ollama:
-   ```bash
-   docker compose exec worker ping -c 3 ollama
-   ```
-
-### MLflow UI Not Loading
-
-**Problem**: Cannot access http://localhost:5000
-
-**Solutions**:
-1. Check MLflow container status:
-   ```bash
-   docker compose ps mlflow
-   ```
-
-2. View MLflow logs:
-   ```bash
-   docker compose logs mlflow
-   ```
-
-3. Ensure port 5000 is not in use:
-   ```bash
-   # Linux/Mac
-   lsof -i :5000
-   
-   # Windows
-   netstat -ano | findstr :5000
-   ```
-
-### Out of Disk Space
-
-**Problem**: Docker runs out of space
-
-**Solution**: Models are ~4-5GB. Clean up unused Docker resources:
 ```bash
+# Check Ollama logs
+docker compose logs ollama
+
+# Manually pull model
+docker compose exec ollama ollama pull llama3
+
+# Restart Ollama service
+docker compose restart ollama
+```
+</details>
+
+<details>
+<summary><strong>🚨 Worker cannot connect to Ollama</strong></summary>
+
+**Symptoms:** Tasks fail with connection errors
+
+**Solutions:**
+
+```bash
+# Verify network connectivity
+docker compose exec worker ping -c 3 ollama
+
+# Check Ollama is accessible
+docker compose exec worker curl http://ollama:11434/api/tags
+
+# Verify all services are on same network
+docker network inspect llm-api_llm-network
+
+# Restart all services
+docker compose restart
+```
+</details>
+
+<details>
+<summary><strong>🚨 Tasks stuck in PENDING</strong></summary>
+
+**Symptoms:** Tasks never complete
+
+**Solutions:**
+
+```bash
+# Check worker is running
+docker compose ps worker
+
+# View worker logs for errors
+docker compose logs -f worker
+
+# Verify worker can reach Redis
+docker compose exec worker ping -c 3 redis
+
+# Restart worker
+docker compose restart worker
+```
+</details>
+
+<details>
+<summary><strong>🚨 Redis connection refused</strong></summary>
+
+**Symptoms:** Worker or API cannot connect to Redis
+
+**Solutions:**
+
+```bash
+# Check Redis is running
+docker compose ps redis
+
+# View Redis logs
+docker compose logs redis
+
+# Verify Redis is accessible
+docker compose exec api ping -c 3 redis
+
+# Restart Redis
+docker compose restart redis
+```
+</details>
+
+<details>
+<summary><strong>🚨 MLflow UI not loading</strong></summary>
+
+**Symptoms:** Cannot access http://localhost:5000
+
+**Solutions:**
+
+```bash
+# Check MLflow container status
+docker compose ps mlflow
+
+# View MLflow logs
+docker compose logs mlflow
+
+# Ensure port 5000 is not in use
+# Linux/Mac
+lsof -i :5000
+
+# Windows
+netstat -ano | findstr :5000
+
+# Restart MLflow
+docker compose restart mlflow
+```
+</details>
+
+<details>
+<summary><strong>🚨 Port already in use</strong></summary>
+
+**Symptoms:** `Error: bind: address already in use`
+
+**Solutions:**
+
+```bash
+# Find process using port (Linux/Mac)
+lsof -i :8000
+
+# Find process using port (Windows)
+netstat -ano | findstr :8000
+
+# Kill the process
+kill -9 <PID>
+
+# Or change ports in docker-compose.yml
+```
+</details>
+
+<details>
+<summary><strong>🚨 Out of disk space</strong></summary>
+
+**Symptoms:** Docker runs out of space
+
+**Solutions:**
+
+Models are ~4-5GB. Clean up unused Docker resources:
+
+```bash
+# Remove unused containers, networks, images
 docker system prune -a
+
+# Remove unused volumes (WARNING: deletes model data!)
 docker volume prune
+
+# Check Docker disk usage
+docker system df
 ```
+</details>
 
----
-
-## 🧪 Testing the API
-
-### Quick Test with curl
+### Common Commands
 
 ```bash
-# Submit task
-TASK_ID=$(curl -s -X POST http://localhost:8000/generate \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "What is FastAPI?"}' | jq -r '.task_id')
+# View resource usage
+docker stats
 
-echo "Task ID: $TASK_ID"
+# Inspect specific container
+docker inspect llm_worker
 
-# Wait a few seconds, then check result
-sleep 5
-curl http://localhost:8000/status/$TASK_ID | jq
-```
+# Execute command in container
+docker compose exec worker bash
 
-### Using HTTPie
+# View all networks
+docker network ls
 
-```bash
-# Submit task
-http POST localhost:8000/generate prompt="Explain machine learning"
-
-# Check status
-http GET localhost:8000/status/TASK_ID
-```
-
-### Python Test Script
-
-```python
-import requests
-import time
-import json
-
-def test_llm_api():
-    # Submit generation task
-    response = requests.post(
-        "http://localhost:8000/generate",
-        json={"prompt": "What are the benefits of containerization?"}
-    )
-    
-    task_id = response.json()["task_id"]
-    print(f"✓ Task submitted: {task_id}")
-    
-    # Poll for result
-    print("⏳ Waiting for result...")
-    while True:
-        result = requests.get(f"http://localhost:8000/status/{task_id}").json()
-        
-        if result["status"] == "SUCCESS":
-            print("✓ Task completed!")
-            print("\nResponse:")
-            print(result["result"]["response"])
-            break
-        elif result["status"] == "FAILURE":
-            print(f"✗ Task failed: {result.get('error')}")
-            break
-        elif result["status"] == "PROGRESS":
-            print(f"⏳ Progress: {result.get('result')}")
-        
-        time.sleep(2)
-
-if __name__ == "__main__":
-    test_llm_api()
+# View all volumes
+docker volume ls
 ```
 
 ---
 
-## 🔍 Managing Ollama Models
+## 🗺️ Roadmap
 
-### List Available Models
+### Phase 1: Core Infrastructure ✅
 
-```bash
-docker compose exec ollama ollama list
-```
+- [x] FastAPI REST API
+- [x] Celery background processing
+- [x] Redis message queue
+- [x] Docker Compose orchestration
+- [x] MLflow integration
+- [x] Containerized Ollama
 
-### Pull Additional Models
+### Phase 2: Enhanced Features 🚧
 
-```bash
-# Pull a different model
-docker compose exec ollama ollama pull codellama
+- [ ] GPU support for Ollama
+- [ ] Multiple model support (model selection per request)
+- [ ] Streaming responses via WebSocket
+- [ ] Request caching layer
+- [ ] Rate limiting and authentication
+- [ ] Health check endpoints
 
-# Pull a specific version
-docker compose exec ollama ollama pull llama3:13b
-```
+### Phase 3: Production Hardening 📋
 
-### Remove Models
+- [ ] Prometheus metrics export
+- [ ] Grafana dashboards
+- [ ] Auto-scaling workers
+- [ ] Load balancing
+- [ ] Circuit breakers
+- [ ] Request retry logic
+- [ ] Dead letter queue
 
-```bash
-docker compose exec ollama ollama rm llama3
-```
+### Phase 4: Advanced ML 🔮
 
-### Check Model Info
-
-```bash
-docker compose exec ollama ollama show llama3
-```
-
----
-
-## 📊 Monitoring with MLflow
-
-### Access MLflow UI
-
-Navigate to http://localhost:5000
-
-### View Experiments
-
-1. Click on **Experiments** → **llm_inference**
-2. See all inference runs with:
-   - Prompts used
-   - Latency metrics
-   - Model parameters
-   - Response artifacts
-
-### Compare Runs
-
-1. Select multiple runs
-2. Click **Compare**
-3. Analyze performance differences
-
----
-
-## 🛠️ Project Status
-
-| Feature                                      | Status |
-| -------------------------------------------- | ------ |
-| Async FastAPI API                            | ✅      |
-| Celery + Redis background processing         | ✅      |
-| Docker Compose multi-container orchestration | ✅      |
-| Containerized Ollama with auto model pull    | ✅      |
-| Persistent model storage                     | ✅      |
-| Internal Docker networking                   | ✅      |
-| Windows/WSL2-compatible configuration        | ✅      |
-| Centralized configuration with `.env`        | ✅      |
-| MLOps-ready architecture with MLflow         | ✅      |
-| Task status tracking and polling             | ✅      |
-
----
-
-## 🔮 Planned Enhancements
-
-* [ ] **GPU support** for Ollama container
-* [ ] **Multiple model support** (select model per request)
-* [ ] **Hugging Face model registry** integration
-* [ ] **Authentication** and rate limiting
-* [ ] **Streaming responses** support
-* [ ] **Health check endpoints** for all services
-* [ ] **Request caching** with Redis
-* [ ] **Batch processing** capabilities
-* [ ] **Prometheus metrics** export
-* [ ] **Grafana dashboards**
-* [ ] **Auto-scaling** worker containers
-* [ ] **Request queuing** with priority levels
-
----
-
-## 📌 Architecture Benefits
-
-### Complete Containerization
-- **Zero host dependencies**: Everything runs in Docker
-- **Consistent environments**: Same setup on dev, staging, prod
-- **Easy deployment**: Single `docker compose up` command
-- **Portable**: Works on any Docker-capable system
-
-### Automatic Model Management
-- **Auto-download**: Models pulled on first startup
-- **Persistence**: Models stored in Docker volumes
-- **Version control**: Pin specific model versions
-- **Easy updates**: Pull new models without rebuilding
-
-### Service Isolation
-- **Dedicated network**: Services communicate securely
-- **Resource limits**: Set CPU/memory constraints per service
-- **Independent scaling**: Scale services independently
-- **Fault isolation**: Service failures don't cascade
-
-### Developer Experience
-- **Fast onboarding**: No complex local setup
-- **Reproducible**: Same environment for all developers
-- **Easy debugging**: Individual container logs
-- **Hot reload**: Code changes reflected without full rebuild
-
----
-
-## 📚 Additional Resources
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Celery Documentation](https://docs.celeryproject.org/)
-- [Ollama Documentation](https://github.com/ollama/ollama)
-- [Ollama Docker Hub](https://hub.docker.com/r/ollama/ollama)
-- [MLflow Documentation](https://mlflow.org/docs/latest/index.html)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details
+- [ ] Fine-tuning pipeline
+- [ ] Model versioning
+- [ ] A/B testing framework
+- [ ] Batch inference
+- [ ] Custom model registry
+- [ ] Hugging Face integration
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+We welcome contributions! Here's how you can help:
+
+### Development Workflow
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Code Standards
+
+- Follow **PEP 8** for Python code
+- Add **tests** for new features
+- Update **documentation**
+- Run linters before committing:
+  ```bash
+  black app/
+  flake8 app/
+  ```
+
+### Reporting Issues
+
+- Use the issue tracker
+- Include reproduction steps
+- Provide error messages and logs
+- Specify your environment (OS, Docker version)
 
 ---
 
-## ⭐ Show your support
+## 📚 Resources
 
-Give a ⭐️ if this project helped you learn about building production-ready LLM APIs with full containerization!
+### Documentation
+
+- 📖 [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- 🔄 [Celery Documentation](https://docs.celeryproject.org/)
+- 🤖 [Ollama Documentation](https://github.com/ollama/ollama)
+- 🐳 [Ollama Docker Hub](https://hub.docker.com/r/ollama/ollama)
+- 📊 [MLflow Documentation](https://mlflow.org/docs/latest/)
+- 🐳 [Docker Compose Documentation](https://docs.docker.com/compose/)
+
+### Tutorials
+
+- [Building Production APIs with FastAPI](https://fastapi.tiangolo.com/tutorial/)
+- [Celery Best Practices](https://docs.celeryproject.org/en/stable/userguide/tasks.html)
+- [MLflow Tracking Guide](https://mlflow.org/docs/latest/tracking.html)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+```
+MIT License
+
+Copyright (c) 2025 Yahia Achouri
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
+```
+
+---
+
+## 🌟 Acknowledgments
+
+Built with ❤️ using these amazing technologies:
+
+- **[FastAPI](https://fastapi.tiangolo.com/)** - Modern Python web framework
+- **[Ollama](https://ollama.ai/)** - Run LLMs locally
+- **[Celery](https://docs.celeryproject.org/)** - Distributed task queue
+- **[Redis](https://redis.io/)** - In-memory data structure store
+- **[MLflow](https://mlflow.org/)** - ML lifecycle platform
+- **[Docker](https://www.docker.com/)** - Container platform
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you find it helpful! ⭐**
+
+Made with ❤️ by [Yahia Achouri](https://github.com/Yahia995)
+
+[Report Bug](https://github.com/Yahia995/llm-api/issues) · [Request Feature](https://github.com/Yahia995/llm-api/issues) · [Documentation](https://github.com/Yahia995/llm-api/wiki)
+
+</div>
