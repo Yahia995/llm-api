@@ -1,54 +1,46 @@
-import asyncio
+import time
 from celery import Celery
 import mlflow
-import time
 
 from app.core.config import settings
-from app.services.ollama_service import generate_with_ollama
+from app.services.groq_service import generate_with_groq
 
-# Create Celery app
 celery_app = Celery(
     "worker",
-    broker=settings.REDIS_URL,  # Where tasks are queued
-    backend=settings.REDIS_URL  # Where results are stored
+    broker=settings.REDIS_URL,
+    backend=settings.REDIS_URL,
 )
 
-# Configure for Windows/WSL compatibility
 celery_app.conf.worker_pool = "solo"
 celery_app.conf.worker_concurrency = 1
 
-# Configure MLflow
 mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
 
-@celery_app.task(name="generate_task")
-def generate_task(prompt: str):
-    """
-    Process LLM generation with MLflow tracking.
-    Each task = one MLflow run.
-    """
+
+@celery_app.task(name="generate_task", bind=True, max_retries=2)
+def generate_task(self, prompt: str, model: str = None):
     start = time.time()
-    
     mlflow.set_experiment("llm_inference")
 
-    # Start MLflow run
-    with mlflow.start_run():
-        # Log parameters (inputs)
-        mlflow.log_param("model", "llama3")
-        mlflow.log_param("prompt", prompt)
-        
-        # Run the actual LLM inference
-        result = asyncio.run(generate_with_ollama(prompt, settings.OLLAMA_URL))
-        
-        # Calculate latency
-        latency = time.time() - start
-        
-        # Log metrics (measurements)
-        mlflow.log_metric("latency_sec", latency)
-        
-        # Log artifact (full response as file)
-        mlflow.log_text(
-            result.get("response", ""),
-            artifact_file="response.txt"
-        )
+    try:
+        with mlflow.start_run():
+            used_model = model or settings.GROQ_MODEL
 
-    return result      
+            mlflow.log_param("model", used_model)
+            mlflow.log_param("prompt_length", len(prompt))
+
+            result = generate_with_groq(prompt, model=used_model)
+
+            latency = time.time() - start
+            mlflow.log_metric("latency_sec", round(latency, 3))
+            mlflow.log_metric("prompt_tokens", result["prompt_tokens"])
+            mlflow.log_metric("completion_tokens", result["completion_tokens"])
+            mlflow.log_metric("total_tokens", result["total_tokens"])
+
+            mlflow.log_text(result["response"], artifact_file="response.txt")
+
+        result["latency_sec"] = round(latency, 3)
+        return result
+
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=3)
