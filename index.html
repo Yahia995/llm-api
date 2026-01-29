@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LLM API Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0b0e;
+    --surface:   #111318;
+    --surface2:  #181b22;
+    --border:    #1f2330;
+    --border2:   #2a2f3d;
+    --accent:    #00d4aa;
+    --accent2:   #0099ff;
+    --accent3:   #ff6b35;
+    --text:      #e8eaf0;
+    --text2:     #8890a8;
+    --text3:     #555d72;
+    --success:   #00d4aa;
+    --error:     #ff4757;
+    --warning:   #ffa502;
+    --r:         6px;
+    --r2:        10px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    grid-template-columns: 1fr 340px;
+    height: 100vh;
+    gap: 0;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .logo-icon {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-pills {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pill .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--text3);
+  }
+
+  .pill.ok .dot   { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .pill.bad .dot  { background: var(--error); }
+  .pill.warn .dot { background: var(--warning); }
+
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    width: 2px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .model-bar {
+    display: flex;
+    gap: 6px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .model-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .model-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .model-btn.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeUp 0.2s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .msg-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .message.user .msg-avatar  { background: var(--accent2); color: #fff; }
+  .message.model .msg-avatar { background: color-mix(in srgb, var(--accent) 20%, var(--surface2)); color: var(--accent); }
+
+  .msg-body {
+    padding: 12px 14px;
+    border-radius: var(--r2);
+    font-size: 13.5px;
+    line-height: 1.65;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 300;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .message.user .msg-body {
+    background: color-mix(in srgb, var(--accent2) 8%, var(--surface2));
+    border: 1px solid color-mix(in srgb, var(--accent2) 20%, transparent);
+    color: var(--text);
+    margin-left: 40px;
+  }
+
+  .message.model .msg-body {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    margin-right: 40px;
+  }
+
+  .message.error .msg-body {
+    background: color-mix(in srgb, var(--error) 8%, var(--surface2));
+    border: 1px solid color-mix(in srgb, var(--error) 25%, transparent);
+    color: var(--error);
+  }
+
+  .msg-meta {
+    display: flex;
+    gap: 6px;
+    margin-left: 26px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text3);
+  }
+
+  .badge.accent { border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent); }
+
+  .typing .msg-body {
+    padding: 14px;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .typing-dots span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: blink 1.2s infinite;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40%            { opacity: 1;   transform: scale(1); }
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text3);
+    text-align: center;
+  }
+
+  .empty-icon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    background: var(--surface2);
+  }
+
+  .empty-state p { font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  textarea {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--r2);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 300;
+    padding: 10px 14px;
+    resize: none;
+    max-height: 140px;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  textarea::placeholder { color: var(--text3); }
+  textarea:focus { border-color: var(--accent); }
+
+  .send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--r);
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: var(--bg);
+  }
+
+  .send-btn:hover   { background: color-mix(in srgb, var(--accent) 85%, #fff); transform: scale(1.04); }
+  .send-btn:active  { transform: scale(0.97); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .metrics-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .metrics-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-value.accent  { color: var(--accent); }
+  .stat-value.accent2 { color: var(--accent2); }
+  .stat-value.accent3 { color: var(--accent3); }
+
+  .section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .sparkline-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px 12px;
+  }
+
+  .sparkline-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  canvas#sparkline {
+    width: 100%;
+    height: 48px;
+    display: block;
+  }
+
+  .run-log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .run-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    transition: border-color 0.1s;
+    cursor: default;
+  }
+
+  .run-row:hover { border-color: var(--border2); }
+
+  .run-row-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .run-model {
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .run-time { color: var(--text3); font-size: 9px; }
+
+  .run-latency {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .metrics-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .refresh-btn {
+    width: 100%;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: var(--r);
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .refresh-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .no-metrics {
+    text-align: center;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 20px 0;
+    line-height: 1.8;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  @media (max-width: 700px) {
+    html, body { overflow: auto; }
+    .app {
+      grid-template-rows: 52px 1fr auto;
+      grid-template-columns: 1fr;
+      height: auto;
+      min-height: 100vh;
+    }
+    .chat-panel    { border-right: none; border-bottom: 1px solid var(--border); min-height: 60vh; }
+    .metrics-panel { max-height: 360px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      LLM <span>API</span> Platform
+    </div>
+    <div class="header-pills">
+      <div class="pill" id="pill-api">
+        <span class="dot"></span> API
+      </div>
+      <div class="pill" id="pill-redis">
+        <span class="dot"></span> Redis
+      </div>
+      <div class="pill" id="pill-groq">
+        <span class="dot"></span> Groq
+      </div>
+    </div>
+  </header>
+
+  <section class="chat-panel">
+    <div class="panel-title">Inference Playground</div>
+
+    <div class="model-bar">
+      <button class="model-btn active" data-model="llama3-8b-8192">llama3-8b</button>
+      <button class="model-btn" data-model="llama3-70b-8192">llama3-70b</button>
+      <button class="model-btn" data-model="mixtral-8x7b-32768">mixtral-8x7b</button>
+      <button class="model-btn" data-model="gemma2-9b-it">gemma2-9b</button>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">⌬</div>
+        <p>Send a prompt to begin.<br/>Responses stream via async queue.</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <textarea
+        id="prompt-input"
+        rows="1"
+        placeholder="Enter your prompt…"
+        maxlength="4000"
+      ></textarea>
+      <button class="send-btn" id="send-btn" title="Send (Ctrl+Enter)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <aside class="metrics-panel">
+    <div class="panel-title">MLflow Metrics</div>
+
+    <div class="metrics-scroll" id="metrics-scroll">
+      <div class="no-metrics" id="no-metrics">
+        No runs yet.<br/>Send a prompt to see metrics.
+      </div>
+    </div>
+
+    <div class="metrics-footer">
+      <button class="refresh-btn" id="refresh-btn">
+        <span id="refresh-icon">↺</span> Refresh Metrics
+      </button>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+let selectedModel = 'llama3-8b-8192';
+let isGenerating  = false;
+
+async function checkHealth() {
+  try {
+    const res  = await fetch('/health');
+    const data = await res.json();
+
+    setPill('pill-api',   data.status === 'ok' ? 'ok' : 'bad');
+    setPill('pill-redis', data.services?.redis === 'ok'  ? 'ok' : 'bad');
+    setPill('pill-groq',  data.services?.groq_key === 'configured' ? 'ok' : 'warn');
+  } catch {
+    setPill('pill-api',   'bad');
+    setPill('pill-redis', 'bad');
+    setPill('pill-groq',  'bad');
+  }
+}
+
+function setPill(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = `pill ${state}`;
+}
+
+document.querySelectorAll('.model-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedModel = btn.dataset.model;
+  });
+});
+
+const messagesEl  = document.getElementById('messages');
+const emptyState  = document.getElementById('empty-state');
+const promptInput = document.getElementById('prompt-input');
+const sendBtn     = document.getElementById('send-btn');
+
+promptInput.addEventListener('input', () => {
+  promptInput.style.height = 'auto';
+  promptInput.style.height = Math.min(promptInput.scrollHeight, 140) + 'px';
+});
+
+promptInput.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendMessage();
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+function appendMessage(role, content, meta = null) {
+  if (emptyState.parentNode === messagesEl) messagesEl.removeChild(emptyState);
+
+  const wrap = document.createElement('div');
+  wrap.className = `message ${role}`;
+
+  const label = role === 'user' ? 'YOU' : role === 'model' ? 'MODEL' : 'ERROR';
+  const avatar = role === 'user' ? 'U' : role === 'model' ? 'AI' : '!';
+
+  wrap.innerHTML = `
+    <div class="msg-header">
+      <div class="msg-avatar">${avatar}</div>
+      ${label}
+      ${meta?.model ? `<span style="color:var(--text3);font-size:9px">· ${meta.model}</span>` : ''}
+    </div>
+    <div class="msg-body">${escHtml(content)}</div>
+    ${meta ? `<div class="msg-meta">
+      ${meta.latency   != null ? `<span class="badge accent">${meta.latency}s</span>` : ''}
+      ${meta.tokens    != null ? `<span class="badge">${meta.tokens} tok</span>` : ''}
+      ${meta.finish    != null ? `<span class="badge">${meta.finish}</span>` : ''}
+    </div>` : ''}
+  `;
+
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+
+function appendTyping() {
+  if (emptyState.parentNode === messagesEl) messagesEl.removeChild(emptyState);
+  const wrap = document.createElement('div');
+  wrap.className = 'message model typing';
+  wrap.innerHTML = `
+    <div class="msg-header"><div class="msg-avatar">AI</div> MODEL</div>
+    <div class="msg-body"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+  `;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+
+async function sendMessage() {
+  const prompt = promptInput.value.trim();
+  if (!prompt || isGenerating) return;
+
+  isGenerating = true;
+  sendBtn.disabled = true;
+  promptInput.value = '';
+  promptInput.style.height = 'auto';
+
+  appendMessage('user', prompt);
+  const typingEl = appendTyping();
+
+  try {
+    const submitRes = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, model: selectedModel }),
+    });
+    const { task_id } = await submitRes.json();
+
+    const result = await pollTask(task_id);
+    typingEl.remove();
+
+    if (result.status === 'SUCCESS') {
+      const r = result.result;
+      appendMessage('model', r.response, {
+        model:   r.model,
+        latency: r.latency_sec,
+        tokens:  r.total_tokens,
+        finish:  r.finish_reason,
+      });
+      setTimeout(loadMetrics, 800);
+    } else {
+      appendMessage('error', result.error || 'Task failed.');
+    }
+
+  } catch (err) {
+    typingEl.remove();
+    appendMessage('error', `Request failed: ${err.message}`);
+  }
+
+  isGenerating = false;
+  sendBtn.disabled = false;
+  promptInput.focus();
+}
+
+async function pollTask(taskId, maxAttempts = 60) {
+  for (let i = 0; i < maxAttempts; i++) {
+    await sleep(1000);
+    const res  = await fetch(`/status/${taskId}`);
+    const data = await res.json();
+    if (data.status === 'SUCCESS' || data.status === 'FAILURE') return data;
+  }
+  throw new Error('Timed out waiting for response.');
+}
+
+const metricsScroll = document.getElementById('metrics-scroll');
+const noMetrics     = document.getElementById('no-metrics');
+const refreshBtn    = document.getElementById('refresh-btn');
+const refreshIcon   = document.getElementById('refresh-icon');
+
+refreshBtn.addEventListener('click', loadMetrics);
+
+async function loadMetrics() {
+  refreshIcon.className = 'spin';
+  try {
+    const res  = await fetch('/metrics');
+    const data = await res.json();
+    renderMetrics(data);
+  } catch (e) {
+    console.warn('Metrics fetch failed', e);
+  } finally {
+    refreshIcon.className = '';
+    refreshIcon.textContent = '↺';
+  }
+}
+
+function renderMetrics(data) {
+  const { runs = [], summary = {} } = data;
+
+  metricsScroll.innerHTML = '';
+
+  if (runs.length === 0) {
+    metricsScroll.innerHTML = '<div class="no-metrics">No runs yet.<br/>Send a prompt to see metrics.</div>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'stat-grid';
+  grid.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Runs</div>
+      <div class="stat-value accent">${summary.total_runs ?? 0}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Latency</div>
+      <div class="stat-value accent2">${summary.avg_latency_sec ?? '—'}s</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Tokens</div>
+      <div class="stat-value">${fmtNum(summary.total_tokens_used)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Tokens</div>
+      <div class="stat-value accent3">${summary.avg_tokens_per_run ?? '—'}</div>
+    </div>
+  `;
+  metricsScroll.appendChild(grid);
+
+  const latencies = runs.map(r => r.latency_sec).filter(Boolean).reverse();
+  if (latencies.length > 1) {
+    const wrap = document.createElement('div');
+    wrap.className = 'sparkline-wrap';
+    wrap.innerHTML = `
+      <div class="sparkline-label">Latency trend (last ${latencies.length} runs)</div>
+      <canvas id="sparkline" height="48"></canvas>
+    `;
+    metricsScroll.appendChild(wrap);
+    requestAnimationFrame(() => drawSparkline(latencies));
+  }
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'section-label';
+  labelEl.textContent = 'Recent Runs';
+  metricsScroll.appendChild(labelEl);
+
+  const logEl = document.createElement('div');
+  logEl.className = 'run-log';
+
+  runs.slice(0, 20).forEach(run => {
+    const row = document.createElement('div');
+    row.className = 'run-row';
+    const ts = run.start_time ? new Date(run.start_time).toLocaleTimeString() : '—';
+    row.innerHTML = `
+      <div class="run-row-left">
+        <div class="run-model">${run.model}</div>
+        <div class="run-time">${ts} · ${run.total_tokens ?? '—'} tok</div>
+      </div>
+      <div class="run-latency">${run.latency_sec != null ? run.latency_sec + 's' : '—'}</div>
+    `;
+    logEl.appendChild(row);
+  });
+
+  metricsScroll.appendChild(logEl);
+}
+
+function drawSparkline(values) {
+  const canvas = document.getElementById('sparkline');
+  if (!canvas) return;
+
+  canvas.width  = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = 48 * window.devicePixelRatio;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const W = canvas.offsetWidth;
+  const H = 48;
+  const pad = 4;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const toX = i => pad + (i / (values.length - 1)) * (W - pad * 2);
+  const toY = v => H - pad - ((v - min) / range) * (H - pad * 2);
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(0,212,170,0.25)');
+  grad.addColorStop(1, 'rgba(0,212,170,0)');
+
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
+  ctx.lineTo(toX(values.length - 1), H);
+  ctx.lineTo(toX(0), H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
+  ctx.strokeStyle = '#00d4aa';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  const lx = toX(values.length - 1);
+  const ly = toY(values[values.length - 1]);
+  ctx.beginPath();
+  ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#00d4aa';
+  ctx.fill();
+}
+
+const sleep   = ms => new Promise(r => setTimeout(r, ms));
+const fmtNum  = n => n != null ? Number(n).toLocaleString() : '—';
+const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+checkHealth();
+loadMetrics();
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>
