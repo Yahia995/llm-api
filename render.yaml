@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: llm-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false     
+      - key: GROQ_MODEL
+        value: llama3-8b-8192
+      - key: REDIS_URL
+        sync: false                 
+      - key: MLFLOW_TRACKING_URI
+        fromService:
+          name: llm-mlflow
+          type: web
+          property: host
+          transform: "https://{value}"
+
+  - type: worker
+    name: llm-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A app.celery_worker worker --pool=solo --loglevel=info
+    plan: free
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama3-8b-8192
+      - key: REDIS_URL
+        sync: false
+      - key: MLFLOW_TRACKING_URI
+        fromService:
+          name: llm-mlflow
+          type: web
+          property: host
+          transform: "https://{value}"
+
+  - type: web
+    name: llm-mlflow
+    runtime: docker
+    dockerfilePath: ./mlflow/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false                      

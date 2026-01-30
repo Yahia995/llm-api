@@ -128,14 +128,20 @@ llm-api/
 
 ---
 
-## Deployment (Koyeb)
+## Deployment (Render)
 
-1. Fork / push this repo to GitHub
-2. Create secrets in Koyeb: `GROQ_API_KEY`, `REDIS_URL`, `DATABASE_URL`
-3. Update the GitHub repo path and MLflow URL in `koyeb.yaml`
-4. `koyeb deploy --config koyeb.yaml`
+1. Push this repo to GitHub
+2. Go to [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint** → select your repo
+3. Render detects `render.yaml` and creates all 3 services automatically
+4. Set these secrets in the Render dashboard:
 
-Three services deploy: **api**, **worker**, **mlflow** — each as a separate Koyeb service on the free nano tier.
+| Secret | Where to get it |
+|---|---|
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) |
+| `REDIS_URL` | [upstash.com](https://upstash.com) — free Redis |
+| `DATABASE_URL` | [neon.tech](https://neon.tech) — free Postgres |
+
+Three services deploy: **llm-api** (web), **llm-worker** (background worker), **llm-mlflow** (web). The API and worker automatically get the MLflow URL injected via `fromService`.
 
 ---
 
