@@ -719,6 +719,19 @@ function appendTyping() {
   return wrap;
 }
 
+async function safeFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  try {
+    const data = JSON.parse(text);
+    if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
+    return data;
+  } catch (e) {
+    if (!res.ok) throw new Error(`Server error ${res.status} — check Render logs`);
+    throw new Error(`Unexpected response from server`);
+  }
+}
+
 async function sendMessage() {
   const prompt = promptInput.value.trim();
   if (!prompt || isGenerating) return;
@@ -732,12 +745,11 @@ async function sendMessage() {
   const typingEl = appendTyping();
 
   try {
-    const submitRes = await fetch('/generate', {
+    const { task_id } = await safeFetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, model: selectedModel }),
     });
-    const { task_id } = await submitRes.json();
 
     const result = await pollTask(task_id);
     typingEl.remove();
@@ -757,7 +769,7 @@ async function sendMessage() {
 
   } catch (err) {
     typingEl.remove();
-    appendMessage('error', `Request failed: ${err.message}`);
+    appendMessage('error', err.message);
   }
 
   isGenerating = false;
@@ -768,11 +780,13 @@ async function sendMessage() {
 async function pollTask(taskId, maxAttempts = 60) {
   for (let i = 0; i < maxAttempts; i++) {
     await sleep(1000);
-    const res  = await fetch(`/status/${taskId}`);
-    const data = await res.json();
-    if (data.status === 'SUCCESS' || data.status === 'FAILURE') return data;
+    try {
+      const data = await safeFetch(`/status/${taskId}`);
+      if (data.status === 'SUCCESS' || data.status === 'FAILURE') return data;
+    } catch (e) {
+    }
   }
-  throw new Error('Timed out waiting for response.');
+  throw new Error('Timed out — task took too long. Check worker logs.');
 }
 
 const metricsScroll = document.getElementById('metrics-scroll');

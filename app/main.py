@@ -2,15 +2,17 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import redis as redis_lib
+import logging
 import os
 
 from app.api.generate import router
 from app.core.config import settings
 
+log = logging.getLogger("uvicorn.error")
+
 app = FastAPI(title="LLM API Platform", docs_url="/api/docs")
 
 app.include_router(router)
-
 
 @app.get("/health")
 async def health():
@@ -28,11 +30,20 @@ async def health():
     overall = "ok" if all(v in ("ok", "configured") for v in status.values()) else "degraded"
     return {"status": overall, "services": status}
 
-
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+@app.on_event("startup")
+async def startup():
+    log.info(f"STATIC_DIR = {STATIC_DIR}")
+    log.info(f"STATIC_DIR exists = {os.path.isdir(STATIC_DIR)}")
+    if os.path.isdir(STATIC_DIR):
+        log.info(f"STATIC_DIR contents = {os.listdir(STATIC_DIR)}")
+    if os.path.isdir(STATIC_DIR):
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
 async def dashboard():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    index = os.path.join(STATIC_DIR, "index.html")
+    if os.path.isfile(index):
+        return FileResponse(index)
+    return {"message": "LLM API running", "docs": "/api/docs"}

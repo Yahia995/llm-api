@@ -17,6 +17,7 @@ celery_app.conf.worker_pool = "solo"
 celery_app.conf.worker_concurrency = 1
 
 
+
 def log_to_mlflow(prompt: str, result: dict, latency: float):
     try:
         import mlflow
@@ -33,7 +34,6 @@ def log_to_mlflow(prompt: str, result: dict, latency: float):
             mlflow.log_text(result["response"], artifact_file="response.txt")
     except Exception as e:
         logger.warning(f"MLflow logging skipped: {e}")
-
 
 @celery_app.task(name="generate_task", bind=True, max_retries=2)
 def generate_task(self, prompt: str, model: str = None):
