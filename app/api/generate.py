@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from celery.result import AsyncResult
-import mlflow
 
 from app.models.schemas import Prompt
-from app.celery_worker import generate_task
+from app.celery_worker import celery_app, generate_task
 from app.core.config import settings
 
 router = APIRouter()
+
 
 @router.post("/generate")
 async def generate(data: Prompt):
@@ -17,9 +17,10 @@ async def generate(data: Prompt):
         "check_url": f"/status/{task.id}",
     }
 
+
 @router.get("/status/{task_id}")
 async def get_status(task_id: str):
-    task = AsyncResult(task_id)
+    task = AsyncResult(task_id, app=celery_app)
 
     if task.state == "PENDING":
         return {"task_id": task_id, "status": "PENDING", "result": None}
@@ -30,8 +31,11 @@ async def get_status(task_id: str):
     else:
         return {"task_id": task_id, "status": task.state, "error": str(task.info)}
 
+
+@router.get("/metrics")
 async def get_metrics():
     try:
+        import mlflow
         mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
         client = mlflow.tracking.MlflowClient()
 
@@ -61,7 +65,7 @@ async def get_metrics():
             })
 
         latencies = [r["latency_sec"] for r in run_data if r["latency_sec"] is not None]
-        tokens = [r["total_tokens"] for r in run_data if r["total_tokens"] is not None]
+        tokens    = [r["total_tokens"] for r in run_data if r["total_tokens"] is not None]
 
         summary = {
             "total_runs": len(run_data),
@@ -75,4 +79,4 @@ async def get_metrics():
         return {"runs": run_data, "summary": summary}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"MLflow error: {str(e)}")
+        return {"runs": [], "summary": {}, "warning": f"MLflow unavailable: {str(e)}"}

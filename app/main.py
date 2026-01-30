@@ -14,12 +14,13 @@ app = FastAPI(title="LLM API Platform", docs_url="/api/docs")
 
 app.include_router(router)
 
+
 @app.get("/health")
 async def health():
     status = {"api": "ok", "redis": "unknown", "groq_key": "unknown"}
 
     try:
-        r = redis_lib.from_url(settings.REDIS_URL, socket_connect_timeout=2)
+        r = redis_lib.from_url(settings.redis_url_safe, socket_connect_timeout=2)
         r.ping()
         status["redis"] = "ok"
     except Exception:
@@ -30,7 +31,9 @@ async def health():
     overall = "ok" if all(v in ("ok", "configured") for v in status.values()) else "degraded"
     return {"status": overall, "services": status}
 
+
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
 
 @app.on_event("startup")
 async def startup():
@@ -40,6 +43,7 @@ async def startup():
         log.info(f"STATIC_DIR contents = {os.listdir(STATIC_DIR)}")
     if os.path.isdir(STATIC_DIR):
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 @app.get("/")
 async def dashboard():
