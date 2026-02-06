@@ -7,12 +7,12 @@ services:
     healthCheckPath: /health
     envVars:
       - key: GROQ_API_KEY
-        sync: false
+        sync: false 
       - key: GROQ_MODEL
-        value: llama3-8b-8192
+        value: llama-3.1-8b-instant
       - key: REDIS_URL
-        sync: false
+        sync: false       
       - key: DATABASE_URL
-        sync: false
+        sync: false        
       - key: MLFLOW_TRACKING_URI
-        value: "none"
+        value: "none"       
