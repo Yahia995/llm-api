@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import redis as redis_lib
 import logging
+import ssl
 import os
 
 from app.api.generate import router
@@ -17,19 +18,29 @@ app.include_router(router)
 
 @app.get("/health")
 async def health():
-    status = {"api": "ok", "redis": "unknown", "groq_key": "unknown"}
+    status  = {"api": "ok", "redis": "unknown", "groq_key": "unknown"}
+    details = {}
 
     try:
-        r = redis_lib.from_url(settings.redis_url_safe, socket_connect_timeout=2)
+        url = settings.REDIS_URL
+        if url.startswith("rediss://"):
+            r = redis_lib.from_url(
+                url,
+                socket_connect_timeout=3,
+                ssl_cert_reqs=ssl.CERT_NONE,
+            )
+        else:
+            r = redis_lib.from_url(url, socket_connect_timeout=3)
         r.ping()
         status["redis"] = "ok"
-    except Exception:
-        status["redis"] = "unreachable"
+    except Exception as e:
+        status["redis"]   = "unreachable"
+        details["redis_error"] = str(e)
 
     status["groq_key"] = "configured" if settings.GROQ_API_KEY else "missing"
 
     overall = "ok" if all(v in ("ok", "configured") for v in status.values()) else "degraded"
-    return {"status": overall, "services": status}
+    return {"status": overall, "services": status, **details}
 
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -41,7 +52,6 @@ async def startup():
     log.info(f"STATIC_DIR exists = {os.path.isdir(STATIC_DIR)}")
     if os.path.isdir(STATIC_DIR):
         log.info(f"STATIC_DIR contents = {os.listdir(STATIC_DIR)}")
-    if os.path.isdir(STATIC_DIR):
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

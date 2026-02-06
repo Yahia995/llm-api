@@ -11,17 +11,12 @@ router = APIRouter()
 @router.post("/generate")
 async def generate(data: Prompt):
     task = generate_task.delay(data.prompt, data.model)
-    return {
-        "task_id": task.id,
-        "status": "queued",
-        "check_url": f"/status/{task.id}",
-    }
+    return {"task_id": task.id, "status": "queued", "check_url": f"/status/{task.id}"}
 
 
 @router.get("/status/{task_id}")
 async def get_status(task_id: str):
     task = AsyncResult(task_id, app=celery_app)
-
     if task.state == "PENDING":
         return {"task_id": task_id, "status": "PENDING", "result": None}
     elif task.state == "PROGRESS":
@@ -36,7 +31,8 @@ async def get_status(task_id: str):
 async def get_metrics():
     try:
         import mlflow
-        mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
+        tracking_uri = settings.DATABASE_URL if settings.DATABASE_URL else settings.MLFLOW_TRACKING_URI
+        mlflow.set_tracking_uri(tracking_uri)
         client = mlflow.tracking.MlflowClient()
 
         experiment = client.get_experiment_by_name("llm_inference")
@@ -54,26 +50,25 @@ async def get_metrics():
             m = run.data.metrics
             p = run.data.params
             run_data.append({
-                "run_id": run.info.run_id,
-                "start_time": run.info.start_time,
-                "model": p.get("model", "unknown"),
-                "latency_sec": m.get("latency_sec"),
-                "prompt_tokens": m.get("prompt_tokens"),
-                "completion_tokens": m.get("completion_tokens"),
-                "total_tokens": m.get("total_tokens"),
-                "prompt_length": p.get("prompt_length"),
+                "run_id":           run.info.run_id,
+                "start_time":       run.info.start_time,
+                "model":            p.get("model", "unknown"),
+                "latency_sec":      m.get("latency_sec"),
+                "prompt_tokens":    m.get("prompt_tokens"),
+                "completion_tokens":m.get("completion_tokens"),
+                "total_tokens":     m.get("total_tokens"),
             })
 
-        latencies = [r["latency_sec"] for r in run_data if r["latency_sec"] is not None]
+        latencies = [r["latency_sec"]  for r in run_data if r["latency_sec"]  is not None]
         tokens    = [r["total_tokens"] for r in run_data if r["total_tokens"] is not None]
 
         summary = {
-            "total_runs": len(run_data),
-            "avg_latency_sec": round(sum(latencies) / len(latencies), 3) if latencies else 0,
-            "min_latency_sec": round(min(latencies), 3) if latencies else 0,
-            "max_latency_sec": round(max(latencies), 3) if latencies else 0,
+            "total_runs":        len(run_data),
+            "avg_latency_sec":   round(sum(latencies) / len(latencies), 3) if latencies else 0,
+            "min_latency_sec":   round(min(latencies), 3)                  if latencies else 0,
+            "max_latency_sec":   round(max(latencies), 3)                  if latencies else 0,
             "total_tokens_used": int(sum(tokens)),
-            "avg_tokens_per_run": round(sum(tokens) / len(tokens), 1) if tokens else 0,
+            "avg_tokens_per_run":round(sum(tokens) / len(tokens), 1)       if tokens    else 0,
         }
 
         return {"runs": run_data, "summary": summary}

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ── reset & tokens ─────────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
@@ -37,6 +38,7 @@
     overflow: hidden;
   }
 
+  /* ── layout ─────────────────────────────────────────────────── */
   .app {
     display: grid;
     grid-template-rows: 52px 1fr;
@@ -45,6 +47,7 @@
     gap: 0;
   }
 
+  /* ── header ─────────────────────────────────────────────────── */
   header {
     grid-column: 1 / -1;
     display: flex;
@@ -107,6 +110,7 @@
   .pill.bad .dot  { background: var(--error); }
   .pill.warn .dot { background: var(--warning); }
 
+  /* ── chat panel ──────────────────────────────────────────────── */
   .chat-panel {
     display: flex;
     flex-direction: column;
@@ -135,6 +139,7 @@
     border-radius: 2px;
   }
 
+  /* model selector */
   .model-bar {
     display: flex;
     gap: 6px;
@@ -165,6 +170,7 @@
     color: var(--accent);
   }
 
+  /* messages */
   .messages {
     flex: 1;
     overflow-y: auto;
@@ -244,6 +250,7 @@
     color: var(--error);
   }
 
+  /* meta badges under model messages */
   .msg-meta {
     display: flex;
     gap: 6px;
@@ -263,6 +270,7 @@
 
   .badge.accent { border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent); }
 
+  /* typing indicator */
   .typing .msg-body {
     padding: 14px;
   }
@@ -289,6 +297,7 @@
     40%            { opacity: 1;   transform: scale(1); }
   }
 
+  /* empty state */
   .empty-state {
     flex: 1;
     display: flex;
@@ -313,6 +322,7 @@
 
   .empty-state p { font-size: 12px; font-family: 'JetBrains Mono', monospace; }
 
+  /* input area */
   .input-area {
     border-top: 1px solid var(--border);
     padding: 14px 20px;
@@ -359,6 +369,7 @@
   .send-btn:active  { transform: scale(0.97); }
   .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
+  /* ── metrics panel ───────────────────────────────────────────── */
   .metrics-panel {
     display: flex;
     flex-direction: column;
@@ -377,6 +388,7 @@
     scrollbar-color: var(--border2) transparent;
   }
 
+  /* stat cards */
   .stat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -413,6 +425,7 @@
   .stat-value.accent2 { color: var(--accent2); }
   .stat-value.accent3 { color: var(--accent3); }
 
+  /* section label */
   .section-label {
     font-size: 9px;
     font-weight: 600;
@@ -432,6 +445,7 @@
     background: var(--border);
   }
 
+  /* latency sparkline */
   .sparkline-wrap {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -454,6 +468,7 @@
     display: block;
   }
 
+  /* run log */
   .run-log {
     display: flex;
     flex-direction: column;
@@ -501,6 +516,7 @@
     white-space: nowrap;
   }
 
+  /* refresh btn */
   .metrics-footer {
     padding: 10px 16px;
     border-top: 1px solid var(--border);
@@ -531,6 +547,7 @@
   .spin { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* empty metrics */
   .no-metrics {
     text-align: center;
     color: var(--text3);
@@ -540,10 +557,12 @@
     line-height: 1.8;
   }
 
+  /* scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
+  /* ── responsive ──────────────────────────────────────────────── */
   @media (max-width: 700px) {
     html, body { overflow: auto; }
     .app {
@@ -560,6 +579,7 @@
 <body>
 <div class="app">
 
+  <!-- ── Header ─────────────────────────────────────── -->
   <header>
     <div class="logo">
       <div class="logo-icon">⚡</div>
@@ -578,9 +598,11 @@
     </div>
   </header>
 
+  <!-- ── Chat Panel ─────────────────────────────────── -->
   <section class="chat-panel">
     <div class="panel-title">Inference Playground</div>
 
+    <!-- model selector -->
     <div class="model-bar">
       <button class="model-btn active" data-model="llama3-8b-8192">llama3-8b</button>
       <button class="model-btn" data-model="llama3-70b-8192">llama3-70b</button>
@@ -588,6 +610,7 @@
       <button class="model-btn" data-model="gemma2-9b-it">gemma2-9b</button>
     </div>
 
+    <!-- messages -->
     <div class="messages" id="messages">
       <div class="empty-state" id="empty-state">
         <div class="empty-icon">⌬</div>
@@ -595,6 +618,7 @@
       </div>
     </div>
 
+    <!-- input -->
     <div class="input-area">
       <textarea
         id="prompt-input"
@@ -611,6 +635,7 @@
     </div>
   </section>
 
+  <!-- ── Metrics Panel ──────────────────────────────── -->
   <aside class="metrics-panel">
     <div class="panel-title">MLflow Metrics</div>
 
@@ -630,17 +655,27 @@
 </div>
 
 <script>
+// ─────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────
 let selectedModel = 'llama3-8b-8192';
 let isGenerating  = false;
 
+// ─────────────────────────────────────────────────────────────────────
+// Health check
+// ─────────────────────────────────────────────────────────────────────
 async function checkHealth() {
   try {
     const res  = await fetch('/health');
     const data = await res.json();
 
-    setPill('pill-api',   data.status === 'ok' ? 'ok' : 'bad');
-    setPill('pill-redis', data.services?.redis === 'ok'  ? 'ok' : 'bad');
+    // API pill = green as long as we got a response back
+    setPill('pill-api',   'ok');
+    setPill('pill-redis', data.services?.redis === 'ok' ? 'ok' : 'bad');
     setPill('pill-groq',  data.services?.groq_key === 'configured' ? 'ok' : 'warn');
+
+    // Show redis error in console to help debug
+    if (data.redis_error) console.warn('Redis:', data.redis_error);
   } catch {
     setPill('pill-api',   'bad');
     setPill('pill-redis', 'bad');
@@ -654,6 +689,9 @@ function setPill(id, state) {
   el.className = `pill ${state}`;
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Model selector
+// ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.model-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
@@ -662,16 +700,21 @@ document.querySelectorAll('.model-btn').forEach(btn => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────
+// Chat
+// ─────────────────────────────────────────────────────────────────────
 const messagesEl  = document.getElementById('messages');
 const emptyState  = document.getElementById('empty-state');
 const promptInput = document.getElementById('prompt-input');
 const sendBtn     = document.getElementById('send-btn');
 
+// auto-resize textarea
 promptInput.addEventListener('input', () => {
   promptInput.style.height = 'auto';
   promptInput.style.height = Math.min(promptInput.scrollHeight, 140) + 'px';
 });
 
+// Ctrl+Enter to send
 promptInput.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendMessage();
 });
@@ -719,6 +762,7 @@ function appendTyping() {
   return wrap;
 }
 
+// Safe fetch — always returns parsed JSON or throws a clean error message
 async function safeFetch(url, options = {}) {
   const res = await fetch(url, options);
   const text = await res.text();
@@ -727,6 +771,7 @@ async function safeFetch(url, options = {}) {
     if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
     return data;
   } catch (e) {
+    // Server returned HTML (crash page) or non-JSON
     if (!res.ok) throw new Error(`Server error ${res.status} — check Render logs`);
     throw new Error(`Unexpected response from server`);
   }
@@ -745,12 +790,14 @@ async function sendMessage() {
   const typingEl = appendTyping();
 
   try {
+    // 1. Submit task
     const { task_id } = await safeFetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, model: selectedModel }),
     });
 
+    // 2. Poll for result
     const result = await pollTask(task_id);
     typingEl.remove();
 
@@ -784,11 +831,15 @@ async function pollTask(taskId, maxAttempts = 60) {
       const data = await safeFetch(`/status/${taskId}`);
       if (data.status === 'SUCCESS' || data.status === 'FAILURE') return data;
     } catch (e) {
+      // transient poll failure — keep trying
     }
   }
   throw new Error('Timed out — task took too long. Check worker logs.');
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Metrics
+// ─────────────────────────────────────────────────────────────────────
 const metricsScroll = document.getElementById('metrics-scroll');
 const noMetrics     = document.getElementById('no-metrics');
 const refreshBtn    = document.getElementById('refresh-btn');
@@ -813,6 +864,7 @@ async function loadMetrics() {
 function renderMetrics(data) {
   const { runs = [], summary = {} } = data;
 
+  // clear
   metricsScroll.innerHTML = '';
 
   if (runs.length === 0) {
@@ -820,6 +872,7 @@ function renderMetrics(data) {
     return;
   }
 
+  // ── summary cards
   const grid = document.createElement('div');
   grid.className = 'stat-grid';
   grid.innerHTML = `
@@ -842,6 +895,7 @@ function renderMetrics(data) {
   `;
   metricsScroll.appendChild(grid);
 
+  // ── sparkline
   const latencies = runs.map(r => r.latency_sec).filter(Boolean).reverse();
   if (latencies.length > 1) {
     const wrap = document.createElement('div');
@@ -854,6 +908,7 @@ function renderMetrics(data) {
     requestAnimationFrame(() => drawSparkline(latencies));
   }
 
+  // ── run log
   const labelEl = document.createElement('div');
   labelEl.className = 'section-label';
   labelEl.textContent = 'Recent Runs';
@@ -900,6 +955,7 @@ function drawSparkline(values) {
   const toX = i => pad + (i / (values.length - 1)) * (W - pad * 2);
   const toY = v => H - pad - ((v - min) / range) * (H - pad * 2);
 
+  // gradient fill
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, 'rgba(0,212,170,0.25)');
   grad.addColorStop(1, 'rgba(0,212,170,0)');
@@ -913,6 +969,7 @@ function drawSparkline(values) {
   ctx.fillStyle = grad;
   ctx.fill();
 
+  // line
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(values[0]));
   values.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
@@ -920,6 +977,7 @@ function drawSparkline(values) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
+  // last dot
   const lx = toX(values.length - 1);
   const ly = toY(values[values.length - 1]);
   ctx.beginPath();
@@ -928,10 +986,16 @@ function drawSparkline(values) {
   ctx.fill();
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────
 const sleep   = ms => new Promise(r => setTimeout(r, ms));
 const fmtNum  = n => n != null ? Number(n).toLocaleString() : '—';
 const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+// ─────────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────────
 checkHealth();
 loadMetrics();
 setInterval(checkHealth, 30000);
