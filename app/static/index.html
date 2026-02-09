@@ -220,9 +220,103 @@
     line-height: 1.65;
     font-family: 'JetBrains Mono', monospace;
     font-weight: 300;
-    white-space: pre-wrap;
     word-break: break-word;
   }
+
+  .msg-body p  { margin: 0 0 10px; }
+  .msg-body p:last-child { margin-bottom: 0; }
+
+  .msg-body h1, .msg-body h2, .msg-body h3,
+  .msg-body h4, .msg-body h5, .msg-body h6 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    margin: 14px 0 6px;
+    line-height: 1.3;
+  }
+  .msg-body h1 { font-size: 17px; }
+  .msg-body h2 { font-size: 15px; }
+  .msg-body h3, .msg-body h4,
+  .msg-body h5, .msg-body h6 { font-size: 13.5px; color: var(--accent); }
+
+  .msg-body ul, .msg-body ol {
+    padding-left: 18px;
+    margin: 6px 0 10px;
+  }
+  .msg-body li { margin-bottom: 4px; }
+
+  .msg-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .msg-body pre {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--r);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+
+  .msg-body pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .msg-body blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 8px 0;
+    padding: 6px 12px;
+    color: var(--text2);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    border-radius: 0 var(--r) var(--r) 0;
+  }
+
+  .msg-body strong { color: var(--text); font-weight: 700; }
+  .msg-body em     { color: var(--text2); font-style: italic; }
+
+  .msg-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 12px;
+  }
+  .msg-body th {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    padding: 6px 10px;
+    text-align: left;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .msg-body td {
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    color: var(--text2);
+  }
+  .msg-body tr:hover td { background: var(--surface); }
+
+  .msg-body hr {
+    border: none;
+    border-top: 1px solid var(--border2);
+    margin: 12px 0;
+  }
+
+  .msg-body a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+  .msg-body a:hover { text-decoration: underline; }
 
   .message.user .msg-body {
     background: color-mix(in srgb, var(--accent2) 8%, var(--surface2));
@@ -695,7 +789,7 @@ function appendMessage(role, content, meta = null) {
       ${label}
       ${meta?.model ? `<span style="color:var(--text3);font-size:9px">· ${meta.model}</span>` : ''}
     </div>
-    <div class="msg-body">${escHtml(content)}</div>
+    <div class="msg-body">${role === 'model' ? parseMarkdown(content) : escHtml(content)}</div>
     ${meta ? `<div class="msg-meta">
       ${meta.latency   != null ? `<span class="badge accent">${meta.latency}s</span>` : ''}
       ${meta.tokens    != null ? `<span class="badge">${meta.tokens} tok</span>` : ''}
@@ -933,6 +1027,71 @@ function drawSparkline(values) {
 const sleep   = ms => new Promise(r => setTimeout(r, ms));
 const fmtNum  = n => n != null ? Number(n).toLocaleString() : '—';
 const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function parseMarkdown(text) {
+  let html = escHtml(text);
+
+  html = html.replace(/```([\w]*)?\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const l = lang ? ` data-lang="${escHtml(lang)}"` : '';
+    return `<pre${l}><code>${code.trim()}</code></pre>`;
+  });
+
+  html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+  html = html.replace(/^#####\s+(.+)$/gm,  '<h5>$1</h5>');
+  html = html.replace(/^####\s+(.+)$/gm,   '<h4>$1</h4>');
+  html = html.replace(/^###\s+(.+)$/gm,    '<h3>$1</h3>');
+  html = html.replace(/^##\s+(.+)$/gm,     '<h2>$1</h2>');
+  html = html.replace(/^#\s+(.+)$/gm,      '<h1>$1</h1>');
+
+  html = html.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g,       '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g,            '<em>$1</em>');
+  html = html.replace(/\_\_(.+?)\_\_/g,       '<strong>$1</strong>');
+  html = html.replace(/\_(.+?)\_/g,            '<em>$1</em>');
+
+  html = html.replace(/^[-*_]{3,}\s*$/gm, '<hr>');
+
+  html = html.replace(/((?:^[\-\*]\s+.+\n?)+)/gm, match => {
+    const items = match.trim().split('\n')
+      .map(l => `<li>${l.replace(/^[\-\*]\s+/, '')}</li>`)
+      .join('');
+    return `<ul>${items}</ul>`;
+  });
+
+  html = html.replace(/((?:^\d+\.\s+.+\n?)+)/gm, match => {
+    const items = match.trim().split('\n')
+      .map(l => `<li>${l.replace(/^\d+\.\s+/, '')}</li>`)
+      .join('');
+    return `<ol>${items}</ol>`;
+  });
+
+  html = html.replace(/((?:^\|.+\|\n?)+)/gm, match => {
+    const rows = match.trim().split('\n').filter(r => !/^\|[-|\s]+\|$/.test(r.trim()));
+    if (rows.length < 1) return match;
+    const toTds = (row, tag) => row.replace(/^\|/, '').replace(/\|$/, '')
+      .split('|').map(c => `<${tag}>${c.trim()}</${tag}>`).join('');
+    const head = `<tr>${toTds(rows[0], 'th')}</tr>`;
+    const body = rows.slice(1).map(r => `<tr>${toTds(r, 'td')}</tr>`).join('');
+    return `<table>${head}${body}</table>`;
+  });
+
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  html = html.split(/\n{2,}/).map(block => {
+    const trimmed = block.trim();
+    if (!trimmed) return '';
+    if (/^<(h[1-6]|ul|ol|li|blockquote|pre|table|hr)/.test(trimmed)) return trimmed;
+    // wrap plain text lines as paragraph, convert single newlines to <br>
+    return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
+
+  return html;
+}
 
 checkHealth();
 loadMetrics();
