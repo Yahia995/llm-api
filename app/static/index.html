@@ -1,760 +1,601 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LLM API Platform</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LLM Ops Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg:        #0a0b0e;
-    --surface:   #111318;
-    --surface2:  #181b22;
-    --border:    #1f2330;
-    --border2:   #2a2f3d;
-    --accent:    #00d4aa;
-    --accent2:   #0099ff;
-    --accent3:   #ff6b35;
-    --text:      #e8eaf0;
-    --text2:     #8890a8;
-    --text3:     #555d72;
-    --success:   #00d4aa;
-    --error:     #ff4757;
-    --warning:   #ffa502;
-    --r:         6px;
-    --r2:        10px;
-  }
-
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    overflow: hidden;
-  }
-
-  .app {
-    display: grid;
-    grid-template-rows: 52px 1fr;
-    grid-template-columns: 1fr 340px;
-    height: 100vh;
-    gap: 0;
-  }
-
-  header {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--text);
-  }
-
-  .logo-icon {
-    width: 26px;
-    height: 26px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 6px;
-    display: grid;
-    place-items: center;
-    font-size: 13px;
-  }
-
-  .logo span { color: var(--accent); }
-
-  .header-pills {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-  }
-
-  .pill {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    padding: 3px 8px;
-    border-radius: 20px;
-    border: 1px solid var(--border2);
-    color: var(--text2);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .pill .dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--text3);
-  }
-
-  .pill.ok .dot   { background: var(--success); box-shadow: 0 0 6px var(--success); }
-  .pill.bad .dot  { background: var(--error); }
-  .pill.warn .dot { background: var(--warning); }
-
-  .chat-panel {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border);
-    overflow: hidden;
-  }
-
-  .panel-title {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text3);
-    padding: 14px 20px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .panel-title::before {
-    content: '';
-    width: 2px;
-    height: 10px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
-
-  .model-bar {
-    display: flex;
-    gap: 6px;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .model-btn {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    padding: 4px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
-  }
-
-  .model-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .model-btn.active {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border2) transparent;
-  }
-
-  .message {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    animation: fadeUp 0.2s ease;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .msg-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .msg-avatar {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    display: grid;
-    place-items: center;
-    font-size: 9px;
-    font-weight: 700;
-  }
-
-  .message.user .msg-avatar  { background: var(--accent2); color: #fff; }
-  .message.model .msg-avatar { background: color-mix(in srgb, var(--accent) 20%, var(--surface2)); color: var(--accent); }
-
-  .msg-body {
-    padding: 12px 14px;
-    border-radius: var(--r2);
-    font-size: 13.5px;
-    line-height: 1.65;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 300;
-    word-break: break-word;
-  }
-
-  .msg-body p  { margin: 0 0 10px; }
-  .msg-body p:last-child { margin-bottom: 0; }
-
-  .msg-body h1, .msg-body h2, .msg-body h3,
-  .msg-body h4, .msg-body h5, .msg-body h6 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    color: var(--text);
-    margin: 14px 0 6px;
-    line-height: 1.3;
-  }
-  .msg-body h1 { font-size: 17px; }
-  .msg-body h2 { font-size: 15px; }
-  .msg-body h3, .msg-body h4,
-  .msg-body h5, .msg-body h6 { font-size: 13.5px; color: var(--accent); }
-
-  .msg-body ul, .msg-body ol {
-    padding-left: 18px;
-    margin: 6px 0 10px;
-  }
-  .msg-body li { margin-bottom: 4px; }
-
-  .msg-body code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
-    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
-    color: var(--accent);
-    padding: 1px 5px;
-    border-radius: 3px;
-  }
-
-  .msg-body pre {
-    background: var(--bg);
-    border: 1px solid var(--border2);
-    border-radius: var(--r);
-    padding: 12px 14px;
-    overflow-x: auto;
-    margin: 8px 0;
-  }
-
-  .msg-body pre code {
-    background: none;
-    border: none;
-    padding: 0;
-    color: var(--text);
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .msg-body blockquote {
-    border-left: 3px solid var(--accent);
-    margin: 8px 0;
-    padding: 6px 12px;
-    color: var(--text2);
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
-    border-radius: 0 var(--r) var(--r) 0;
-  }
-
-  .msg-body strong { color: var(--text); font-weight: 700; }
-  .msg-body em     { color: var(--text2); font-style: italic; }
-
-  .msg-body table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 8px 0;
-    font-size: 12px;
-  }
-  .msg-body th {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    padding: 6px 10px;
-    text-align: left;
-    color: var(--accent);
-    font-weight: 600;
-  }
-  .msg-body td {
-    border: 1px solid var(--border);
-    padding: 5px 10px;
-    color: var(--text2);
-  }
-  .msg-body tr:hover td { background: var(--surface); }
-
-  .msg-body hr {
-    border: none;
-    border-top: 1px solid var(--border2);
-    margin: 12px 0;
-  }
-
-  .msg-body a {
-    color: var(--accent2);
-    text-decoration: none;
-  }
-  .msg-body a:hover { text-decoration: underline; }
-
-  .message.user .msg-body {
-    background: color-mix(in srgb, var(--accent2) 8%, var(--surface2));
-    border: 1px solid color-mix(in srgb, var(--accent2) 20%, transparent);
-    color: var(--text);
-    margin-left: 40px;
-  }
-
-  .message.model .msg-body {
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    margin-right: 40px;
-  }
-
-  .message.error .msg-body {
-    background: color-mix(in srgb, var(--error) 8%, var(--surface2));
-    border: 1px solid color-mix(in srgb, var(--error) 25%, transparent);
-    color: var(--error);
-  }
-
-  .msg-meta {
-    display: flex;
-    gap: 6px;
-    margin-left: 26px;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9.5px;
-    padding: 2px 7px;
-    border-radius: 3px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text3);
-  }
-
-  .badge.accent { border-color: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent); }
-
-  .typing .msg-body {
-    padding: 14px;
-  }
-
-  .typing-dots {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-
-  .typing-dots span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: blink 1.2s infinite;
-  }
-
-  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-    40%            { opacity: 1;   transform: scale(1); }
-  }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: var(--text3);
-    text-align: center;
-  }
-
-  .empty-icon {
-    width: 48px;
-    height: 48px;
-    border: 1px solid var(--border2);
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    font-size: 22px;
-    background: var(--surface2);
-  }
-
-  .empty-state p { font-size: 12px; font-family: 'JetBrains Mono', monospace; }
-
-  .input-area {
-    border-top: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-
-  textarea {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: var(--r2);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 300;
-    padding: 10px 14px;
-    resize: none;
-    max-height: 140px;
-    line-height: 1.5;
-    transition: border-color 0.15s;
-    outline: none;
-  }
-
-  textarea::placeholder { color: var(--text3); }
-  textarea:focus { border-color: var(--accent); }
-
-  .send-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: var(--r);
-    background: var(--accent);
-    border: none;
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    transition: all 0.15s;
-    color: var(--bg);
-  }
-
-  .send-btn:hover   { background: color-mix(in srgb, var(--accent) 85%, #fff); transform: scale(1.04); }
-  .send-btn:active  { transform: scale(0.97); }
-  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .metrics-panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--surface);
-  }
-
-  .metrics-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border2) transparent;
-  }
-
-  .stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .stat-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .stat-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text3);
-  }
-
-  .stat-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.02em;
-  }
-
-  .stat-value.accent  { color: var(--accent); }
-  .stat-value.accent2 { color: var(--accent2); }
-  .stat-value.accent3 { color: var(--accent3); }
-
-  .section-label {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text3);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .sparkline-wrap {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 10px 12px;
-  }
-
-  .sparkline-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 8px;
-  }
-
-  canvas#sparkline {
-    width: 100%;
-    height: 48px;
-    display: block;
-  }
-
-  .run-log {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .run-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    transition: border-color 0.1s;
-    cursor: default;
-  }
-
-  .run-row:hover { border-color: var(--border2); }
-
-  .run-row-left {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    overflow: hidden;
-  }
-
-  .run-model {
-    color: var(--text);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .run-time { color: var(--text3); font-size: 9px; }
-
-  .run-latency {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent);
-    white-space: nowrap;
-  }
-
-  .metrics-footer {
-    padding: 10px 16px;
-    border-top: 1px solid var(--border);
-  }
-
-  .refresh-btn {
-    width: 100%;
-    padding: 8px;
-    background: transparent;
-    border: 1px solid var(--border2);
-    border-radius: var(--r);
-    color: var(--text2);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .refresh-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .spin { animation: spin 1s linear infinite; display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .no-metrics {
-    text-align: center;
-    color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    padding: 20px 0;
-    line-height: 1.8;
-  }
-
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-  @media (max-width: 700px) {
-    html, body { overflow: auto; }
-    .app {
-      grid-template-rows: 52px 1fr auto;
-      grid-template-columns: 1fr;
-      height: auto;
-      min-height: 100vh;
-    }
-    .chat-panel    { border-right: none; border-bottom: 1px solid var(--border); min-height: 60vh; }
-    .metrics-panel { max-height: 360px; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#08090c;
+  --surface:#0f1117;
+  --surface2:#161922;
+  --surface3:#1c2030;
+  --border:#1e2333;
+  --border2:#262d40;
+  --accent:#00d4aa;
+  --accent2:#3d8ef0;
+  --accent3:#f06040;
+  --accent4:#a855f7;
+  --text:#e8eaf2;
+  --text2:#8890a8;
+  --text3:#4a5168;
+  --success:#00d4aa;
+  --error:#f04060;
+  --warning:#f0a020;
+  --r:6px;--r2:10px;--r3:14px;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden}
+
+.app{display:grid;grid-template-rows:54px 44px 1fr;height:100vh}
+
+header{
+  display:flex;align-items:center;gap:14px;padding:0 22px;
+  border-bottom:1px solid var(--border);background:var(--surface);
+  position:relative;z-index:10;
+}
+
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:.04em}
+.logo-mark{
+  width:28px;height:28px;border-radius:7px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:14px;
+}
+.logo span{color:var(--accent)}
+
+.status-pills{display:flex;gap:6px;margin-left:auto}
+.pill{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  padding:3px 9px;border-radius:20px;border:1px solid var(--border2);
+  color:var(--text2);display:flex;align-items:center;gap:5px;
+}
+.pill .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);transition:background .3s}
+.pill.ok   .dot{background:var(--success);box-shadow:0 0 6px var(--success)}
+.pill.bad  .dot{background:var(--error)}
+.pill.warn .dot{background:var(--warning)}
+
+.tabs{
+  display:flex;align-items:center;gap:2px;padding:0 22px;
+  border-bottom:1px solid var(--border);background:var(--surface);
+}
+.tab{
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:0 16px;height:44px;display:flex;align-items:center;gap:7px;
+  border:none;background:transparent;color:var(--text3);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-icon{font-size:13px}
+
+.panel{display:none;height:100%;overflow:hidden}
+.panel.active{display:flex}
+
+#panel-chat{flex-direction:row}
+
+.chat-main{
+  flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;
+}
+
+.chat-toolbar{
+  display:flex;align-items:center;gap:8px;padding:10px 18px;
+  border-bottom:1px solid var(--border);background:var(--surface);
+}
+
+.mode-toggle{display:flex;gap:4px;background:var(--surface3);border-radius:var(--r);padding:3px}
+.mode-btn{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  padding:4px 10px;border-radius:4px;border:none;background:transparent;
+  color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.mode-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.mode-btn:hover:not(.active){color:var(--text)}
+
+.model-select-wrap{margin-left:auto;position:relative}
+.model-select{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);
+  color:var(--text);padding:5px 28px 5px 10px;cursor:pointer;appearance:none;
+  -webkit-appearance:none;
+}
+.model-select:focus{outline:none;border-color:var(--accent)}
+.model-select-wrap::after{
+  content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:10px;pointer-events:none;
+}
+
+.routing-badge{
+  display:none;align-items:center;gap:6px;padding:7px 12px;
+  background:color-mix(in srgb,var(--accent4) 8%,var(--surface2));
+  border:1px solid color-mix(in srgb,var(--accent4) 25%,transparent);
+  border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--accent4);
+}
+.routing-badge.visible{display:flex}
+.routing-badge strong{color:var(--text);font-weight:600}
+
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+.message{display:flex;flex-direction:column;gap:6px;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.msg-header{
+  display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--text3);
+  font-family:'JetBrains Mono',monospace;
+}
+.msg-avatar{width:18px;height:18px;border-radius:4px;display:grid;place-items:center;font-size:9px;font-weight:700}
+.message.user  .msg-avatar{background:var(--accent2);color:#fff}
+.message.model .msg-avatar{background:color-mix(in srgb,var(--accent) 20%,var(--surface2));color:var(--accent)}
+.message.error .msg-avatar{background:color-mix(in srgb,var(--error) 20%,var(--surface2));color:var(--error)}
+
+.msg-body{
+  padding:12px 14px;border-radius:var(--r2);font-size:13.5px;
+  line-height:1.65;font-family:'JetBrains Mono',monospace;font-weight:300;word-break:break-word;
+}
+.message.user  .msg-body{
+  background:color-mix(in srgb,var(--accent2) 8%,var(--surface2));
+  border:1px solid color-mix(in srgb,var(--accent2) 20%,transparent);margin-left:36px;
+}
+.message.model .msg-body{background:var(--surface2);border:1px solid var(--border2);margin-right:36px}
+.message.error .msg-body{
+  background:color-mix(in srgb,var(--error) 8%,var(--surface2));
+  border:1px solid color-mix(in srgb,var(--error) 25%,transparent);color:var(--error);
+}
+
+.msg-body p{margin:0 0 10px}.msg-body p:last-child{margin-bottom:0}
+.msg-body h1,.msg-body h2,.msg-body h3,.msg-body h4,.msg-body h5,.msg-body h6{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);margin:14px 0 6px;line-height:1.3}
+.msg-body h1{font-size:17px}.msg-body h2{font-size:15px}
+.msg-body h3,.msg-body h4,.msg-body h5,.msg-body h6{font-size:13.5px;color:var(--accent)}
+.msg-body ul,.msg-body ol{padding-left:18px;margin:6px 0 10px}
+.msg-body li{margin-bottom:4px}
+.msg-body code{font-family:'JetBrains Mono',monospace;font-size:12px;background:color-mix(in srgb,var(--accent) 10%,var(--bg));border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);padding:1px 5px;border-radius:3px}
+.msg-body pre{background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;overflow-x:auto;margin:8px 0}
+.msg-body pre code{background:none;border:none;padding:0;color:var(--text);font-size:12px;line-height:1.6}
+.msg-body blockquote{border-left:3px solid var(--accent);margin:8px 0;padding:6px 12px;color:var(--text2);background:color-mix(in srgb,var(--accent) 5%,transparent);border-radius:0 var(--r) var(--r) 0}
+.msg-body strong{color:var(--text);font-weight:700}.msg-body em{color:var(--text2);font-style:italic}
+.msg-body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.msg-body th{background:var(--surface);border:1px solid var(--border2);padding:6px 10px;text-align:left;color:var(--accent);font-weight:600}
+.msg-body td{border:1px solid var(--border);padding:5px 10px;color:var(--text2)}
+.msg-body tr:hover td{background:var(--surface)}
+.msg-body hr{border:none;border-top:1px solid var(--border2);margin:12px 0}
+.msg-body a{color:var(--accent2);text-decoration:none}.msg-body a:hover{text-decoration:underline}
+
+.msg-meta{display:flex;gap:6px;margin-left:26px;flex-wrap:wrap;margin-top:2px}
+.badge{font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:2px 7px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);color:var(--text3)}
+.badge.green{border-color:color-mix(in srgb,var(--accent) 30%,transparent);color:var(--accent)}
+.badge.blue {border-color:color-mix(in srgb,var(--accent2) 30%,transparent);color:var(--accent2)}
+.badge.purple{border-color:color-mix(in srgb,var(--accent4) 30%,transparent);color:var(--accent4)}
+
+.typing-dots{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing-dots span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);text-align:center}
+.empty-icon{width:52px;height:52px;border:1px solid var(--border2);border-radius:14px;display:grid;place-items:center;font-size:24px;background:var(--surface2)}
+.empty-state p{font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.8}
+
+.input-area{border-top:1px solid var(--border);padding:14px 18px;display:flex;gap:10px;align-items:flex-end;background:var(--surface)}
+textarea{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:300;
+  padding:10px 14px;resize:none;max-height:140px;line-height:1.5;transition:border-color .15s;outline:none;
+}
+textarea::placeholder{color:var(--text3)}
+textarea:focus{border-color:var(--accent)}
+.send-btn{
+  width:38px;height:38px;border-radius:var(--r);background:var(--accent);border:none;cursor:pointer;
+  display:grid;place-items:center;flex-shrink:0;transition:all .15s;color:var(--bg);
+}
+.send-btn:hover{background:color-mix(in srgb,var(--accent) 85%,#fff);transform:scale(1.04)}
+.send-btn:active{transform:scale(.97)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.side-metrics{width:300px;display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+
+.side-title{
+  font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text3);padding:13px 16px 10px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.side-title::before{content:'';width:2px;height:10px;background:var(--accent);border-radius:2px}
+
+.side-scroll{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;letter-spacing:-.02em}
+.stat-value.c1{color:var(--accent)}.stat-value.c2{color:var(--accent2)}.stat-value.c3{color:var(--accent3)}.stat-value.c4{color:var(--accent4)}
+
+.section-sep{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace}
+.section-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.sparkline-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.sparkline-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+canvas#sparkline{width:100%;height:46px;display:block}
+
+.run-log{display:flex;flex-direction:column;gap:5px}
+.run-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-size:10px;transition:border-color .1s}
+.run-row:hover{border-color:var(--border2)}
+.run-model{color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run-meta{color:var(--text3);font-size:9px;display:flex;gap:6px;margin-top:2px}
+.run-latency{font-size:11px;font-weight:700;color:var(--accent);white-space:nowrap}
+
+.refresh-btn{
+  width:100%;padding:8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);
+  color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.side-footer{padding:10px 14px;border-top:1px solid var(--border)}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#panel-arena{flex-direction:column}
+
+.arena-header{
+  padding:16px 22px 0;display:flex;flex-direction:column;gap:12px;
+  border-bottom:1px solid var(--border);background:var(--surface);
+}
+.arena-title-row{display:flex;align-items:center;gap:12px}
+.arena-title-row h2{font-size:14px;font-weight:700;color:var(--text)}
+.arena-title-row p{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+.arena-model-toggles{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:14px}
+.arena-model-toggle{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  padding:5px 12px;border-radius:var(--r);border:1px solid var(--border2);
+  background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;
+}
+.arena-model-toggle.selected{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:var(--accent);color:var(--accent)}
+.arena-model-toggle:hover:not(.selected){border-color:var(--text3);color:var(--text)}
+
+.arena-input-row{padding:12px 22px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;gap:10px;align-items:flex-end}
+.arena-input-row textarea{flex:1;min-height:42px}
+.arena-btn{
+  padding:0 20px;height:38px;border-radius:var(--r);background:var(--accent3);border:none;
+  color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+  white-space:nowrap;transition:all .15s;flex-shrink:0;
+}
+.arena-btn:hover{background:color-mix(in srgb,var(--accent3) 85%,#fff)}
+.arena-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.arena-grid{
+  flex:1;overflow-y:auto;padding:18px 22px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:14px;align-content:start;
+  scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
+}
+
+.arena-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);
+  display:flex;flex-direction:column;overflow:hidden;transition:border-color .2s;
+}
+.arena-card.winner{border-color:var(--accent);box-shadow:0 0 20px color-mix(in srgb,var(--accent) 15%,transparent)}
+.arena-card.running{border-color:var(--accent2)}
+
+.arena-card-header{
+  padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;
+  background:var(--surface2);
+}
+.arena-card-model{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.arena-card-status{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px}
+.status-running{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:var(--accent2);border:1px solid color-mix(in srgb,var(--accent2) 30%,transparent)}
+.status-done  {background:color-mix(in srgb,var(--accent)  15%,transparent);color:var(--accent); border:1px solid color-mix(in srgb,var(--accent)  30%,transparent)}
+.status-error {background:color-mix(in srgb,var(--error)   15%,transparent);color:var(--error);  border:1px solid color-mix(in srgb,var(--error)   30%,transparent)}
+.status-wait  {background:var(--surface3);color:var(--text3);border:1px solid var(--border)}
+
+.winner-crown{font-size:14px;display:none}
+.arena-card.winner .winner-crown{display:block}
+
+.arena-card-body{padding:14px;flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;color:var(--text2);min-height:80px}
+.arena-card-body .msg-body{padding:0;background:none;border:none;margin:0;font-size:12px}
+
+.arena-card-footer{
+  padding:10px 14px;border-top:1px solid var(--border);
+  display:flex;gap:8px;flex-wrap:wrap;background:var(--surface2);
+}
+
+.arena-empty{
+  grid-column:1/-1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;color:var(--text3);text-align:center;min-height:300px;
+}
+.arena-empty .empty-icon{width:56px;height:56px;font-size:26px}
+.arena-empty p{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8}
+
+#panel-leaderboard{flex-direction:column;overflow-y:auto;padding:22px;gap:22px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+.lb-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.lb-header h2{font-size:18px;font-weight:800;color:var(--text)}
+.lb-header p{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px}
+
+.summary-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.summary-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);
+  padding:14px 16px;
+}
+.summary-card .label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.summary-card .value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;letter-spacing:-.02em}
+
+.lb-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th{
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text3);padding:12px 16px;text-align:left;background:var(--surface2);
+  border-bottom:1px solid var(--border);font-weight:600;
+}
+.lb-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table tr:hover td{background:var(--surface2)}
+.rank-badge{
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  font-size:11px;font-weight:700;color:var(--bg);
+}
+.rank-1{background:linear-gradient(135deg,#ffd700,#ffaa00)}
+.rank-2{background:linear-gradient(135deg,#c0c0c0,#909090)}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#a06020)}
+.rank-n{background:var(--surface3);color:var(--text3)}
+
+.model-name-cell{color:var(--text);font-weight:500}
+.win-bar-wrap{display:flex;align-items:center;gap:8px}
+.win-bar{height:4px;border-radius:2px;background:color-mix(in srgb,var(--accent) 30%,var(--surface3));flex:1;min-width:60px;overflow:hidden}
+.win-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .6s ease}
+.win-pct{font-size:11px;color:var(--accent);white-space:nowrap;min-width:32px}
+
+.task-breakdown{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px}
+.task-breakdown h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px}
+.task-chips{display:flex;flex-wrap:wrap;gap:8px}
+.task-chip{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);
+  padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;
+  display:flex;align-items:center;gap:8px;
+}
+.task-chip-dot{width:7px;height:7px;border-radius:50%}
+.task-chip-label{color:var(--text);font-weight:500}
+.task-chip-model{color:var(--text3);font-size:10px}
+.task-chip-count{
+  margin-left:auto;background:var(--surface3);border-radius:3px;
+  padding:1px 6px;font-size:9px;color:var(--text2);
+}
+
+.no-data{text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:12px;padding:40px;line-height:1.8}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+@media(max-width:700px){
+  html,body{overflow:auto}
+  .app{grid-template-rows:54px 44px auto;height:auto;min-height:100vh}
+  .panel.active{flex-direction:column}
+  #panel-chat .side-metrics{width:100%;border-top:1px solid var(--border);border-right:none;max-height:360px}
+  .arena-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <header>
-    <div class="logo">
-      <div class="logo-icon">⚡</div>
-      LLM <span>API</span> Platform
-    </div>
-    <div class="header-pills">
-      <div class="pill" id="pill-api">
-        <span class="dot"></span> API
-      </div>
-      <div class="pill" id="pill-redis">
-        <span class="dot"></span> Redis
-      </div>
-      <div class="pill" id="pill-groq">
-        <span class="dot"></span> Groq
-      </div>
-    </div>
-  </header>
+<header>
+  <div class="logo">
+    <div class="logo-mark">⚡</div>
+    LLM <span>Ops</span>
+  </div>
+  <div class="status-pills">
+    <div class="pill" id="pill-api"><span class="dot"></span>API</div>
+    <div class="pill" id="pill-redis"><span class="dot"></span>Redis</div>
+    <div class="pill" id="pill-groq"><span class="dot"></span>Groq</div>
+  </div>
+</header>
 
-  <section class="chat-panel">
-    <div class="panel-title">Inference Playground</div>
+<div class="tabs">
+  <button class="tab active" data-tab="chat"><span class="tab-icon">💬</span>Chat</button>
+  <button class="tab" data-tab="arena"><span class="tab-icon">⚔️</span>Arena</button>
+  <button class="tab" data-tab="leaderboard"><span class="tab-icon">🏆</span>Leaderboard</button>
+</div>
 
-    <div class="model-bar">
-      <button class="model-btn active" data-model="llama-3.1-8b-instant">llama-3.1-8b</button>
-      <button class="model-btn" data-model="llama-3.3-70b-versatile">llama-3.3-70b</button>
-      <button class="model-btn" data-model="openai/gpt-oss-20b">gpt-oss-20b</button>
-      <button class="model-btn" data-model="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout</button>
+<div class="panel active" id="panel-chat">
+  <div class="chat-main">
+
+    <div class="chat-toolbar">
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="manual" title="Pick model manually">
+          <span>⚙</span> Manual
+        </button>
+        <button class="mode-btn" data-mode="router" title="Smart router picks best model">
+          <span>🧠</span> Smart Route
+        </button>
+      </div>
+      <div class="model-select-wrap" id="model-select-wrap">
+        <select class="model-select" id="model-select">
+          <option value="llama-3.1-8b-instant">Llama 3.1 8B — fastest</option>
+          <option value="llama-3.3-70b-versatile">Llama 3.3 70B — smartest</option>
+          <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout</option>
+          <option value="compound-beta">Compound Beta</option>
+        </select>
+      </div>
     </div>
+
+    <div id="routing-banner" class="routing-badge" style="margin:10px 18px 0;display:none"></div>
 
     <div class="messages" id="messages">
       <div class="empty-state" id="empty-state">
         <div class="empty-icon">⌬</div>
-        <p>Send a prompt to begin.<br/>Responses stream via async queue.</p>
+        <p>
+          <strong>Manual mode</strong> — pick a model and send.<br>
+          <strong>Smart Route</strong> — AI classifies your prompt<br>and picks the best model automatically.
+        </p>
       </div>
     </div>
 
     <div class="input-area">
-      <textarea
-        id="prompt-input"
-        rows="1"
-        placeholder="Enter your prompt…"
-        maxlength="4000"
-      ></textarea>
-      <button class="send-btn" id="send-btn" title="Send (Ctrl+Enter)">
+      <textarea id="prompt-input" rows="1" placeholder="Enter your prompt… (Ctrl+Enter to send)" maxlength="4000"></textarea>
+      <button class="send-btn" id="send-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
       </button>
     </div>
-  </section>
+  </div>
 
-  <aside class="metrics-panel">
-    <div class="panel-title">MLflow Metrics</div>
-
-    <div class="metrics-scroll" id="metrics-scroll">
-      <div class="no-metrics" id="no-metrics">
-        No runs yet.<br/>Send a prompt to see metrics.
-      </div>
+  <aside class="side-metrics">
+    <div class="side-title">Live Metrics</div>
+    <div class="side-scroll" id="side-scroll">
+      <div class="no-data" id="side-nodata">No runs yet.</div>
     </div>
-
-    <div class="metrics-footer">
+    <div class="side-footer">
       <button class="refresh-btn" id="refresh-btn">
-        <span id="refresh-icon">↺</span> Refresh Metrics
+        <span id="refresh-icon">↺</span> Refresh
       </button>
     </div>
   </aside>
+</div>
+
+<div class="panel" id="panel-arena">
+  <div class="arena-header">
+    <div class="arena-title-row">
+      <h2>Model Arena</h2>
+      <p>Fire the same prompt at multiple models simultaneously — fastest wins.</p>
+    </div>
+    <div class="arena-model-toggles" id="arena-model-toggles">
+      <button class="arena-model-toggle selected" data-model="llama-3.1-8b-instant">Llama 3.1 8B</button>
+      <button class="arena-model-toggle selected" data-model="llama-3.3-70b-versatile">Llama 3.3 70B</button>
+      <button class="arena-model-toggle selected" data-model="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout</button>
+      <button class="arena-model-toggle selected" data-model="compound-beta">Compound Beta</button>
+    </div>
+  </div>
+
+  <div class="arena-input-row">
+    <textarea id="arena-input" rows="1" placeholder="Enter prompt to benchmark across all selected models…" maxlength="4000"></textarea>
+    <button class="arena-btn" id="arena-btn">⚔ Run Arena</button>
+  </div>
+
+  <div class="arena-grid" id="arena-grid">
+    <div class="arena-empty">
+      <div class="empty-icon">⚔️</div>
+      <p>Select models above and run a prompt.<br>All models race — fastest response wins.</p>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-leaderboard">
+  <div class="lb-header">
+    <div>
+      <h2>Performance Leaderboard</h2>
+      <p>Aggregated from all inference runs tracked in MLflow</p>
+    </div>
+    <button class="refresh-btn" id="lb-refresh-btn" style="width:auto;padding:6px 14px">
+      <span id="lb-refresh-icon">↺</span> Refresh
+    </button>
+  </div>
+  <div id="lb-content"><div class="no-data">Loading leaderboard…</div></div>
+</div>
 
 </div>
 
 <script>
-let selectedModel = 'llama-3.1-8b-instant';
-let isGenerating  = false;
+const sleep   = ms => new Promise(r => setTimeout(r, ms));
+const fmtNum  = n  => n != null ? Number(n).toLocaleString() : '—';
+const escHtml = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-async function checkHealth() {
+function parseMarkdown(text) {
+  let h = escHtml(text);
+  h = h.replace(/```([\w]*)\n?([\s\S]*?)```/g,(_,l,c)=>`<pre><code>${c.trim()}</code></pre>`);
+  h = h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  h = h.replace(/^#{6}\s+(.+)$/gm,'<h6>$1</h6>');
+  h = h.replace(/^#{5}\s+(.+)$/gm,'<h5>$1</h5>');
+  h = h.replace(/^#{4}\s+(.+)$/gm,'<h4>$1</h4>');
+  h = h.replace(/^#{3}\s+(.+)$/gm,'<h3>$1</h3>');
+  h = h.replace(/^#{2}\s+(.+)$/gm,'<h2>$1</h2>');
+  h = h.replace(/^#\s+(.+)$/gm,  '<h1>$1</h1>');
+  h = h.replace(/^&gt;\s+(.+)$/gm,'<blockquote>$1</blockquote>');
+  h = h.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  h = h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  h = h.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  h = h.replace(/__(.+?)__/g,'<strong>$1</strong>');
+  h = h.replace(/_(.+?)_/g,'<em>$1</em>');
+  h = h.replace(/^[-*_]{3,}\s*$/gm,'<hr>');
+  h = h.replace(/((?:^[-*]\s+.+\n?)+)/gm, m=>{
+    const items=m.trim().split('\n').map(l=>`<li>${l.replace(/^[-*]\s+/,'')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
+  h = h.replace(/((?:^\d+\.\s+.+\n?)+)/gm, m=>{
+    const items=m.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\.\s+/,'')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h = h.split(/\n{2,}/).map(block=>{
+    const t=block.trim();
+    if(!t) return '';
+    if(/^<(h[1-6]|ul|ol|blockquote|pre|hr)/.test(t)) return t;
+    return `<p>${t.replace(/\n/g,'<br>')}</p>`;
+  }).join('\n');
+  return h;
+}
+
+async function safeFetch(url, opts={}) {
+  const res  = await fetch(url, opts);
+  const text = await res.text();
   try {
-    const res  = await fetch('/health');
-    const data = await res.json();
-
-    setPill('pill-api',   'ok');
-    setPill('pill-redis', data.services?.redis === 'ok' ? 'ok' : 'bad');
-    setPill('pill-groq',  data.services?.groq_key === 'configured' ? 'ok' : 'warn');
-
-    if (data.redis_error) console.warn('Redis:', data.redis_error);
-  } catch {
-    setPill('pill-api',   'bad');
-    setPill('pill-redis', 'bad');
-    setPill('pill-groq',  'bad');
+    const data = JSON.parse(text);
+    if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
+    return data;
+  } catch(e) {
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    throw new Error('Unexpected server response');
   }
 }
 
-function setPill(id, state) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = `pill ${state}`;
+async function pollTask(taskId, maxAttempts=90) {
+  for (let i=0; i<maxAttempts; i++) {
+    await sleep(1000);
+    try {
+      const d = await safeFetch(`/status/${taskId}`);
+      if (d.status==='SUCCESS'||d.status==='FAILURE') return d;
+    } catch(_) {}
+  }
+  throw new Error('Timed out');
 }
 
-document.querySelectorAll('.model-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+async function checkHealth() {
+  try {
+    const d = await safeFetch('/health');
+    setPill('pill-api',   'ok');
+    setPill('pill-redis', d.services?.redis==='ok' ? 'ok' : 'bad');
+    setPill('pill-groq',  d.services?.groq_key==='configured' ? 'ok' : 'warn');
+  } catch {
+    ['pill-api','pill-redis','pill-groq'].forEach(id=>setPill(id,'bad'));
+  }
+}
+function setPill(id, state) {
+  const el = document.getElementById(id);
+  if (el) el.className=`pill ${state}`;
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+    if (tab.dataset.tab==='leaderboard') loadLeaderboard();
+  });
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    selectedModel = btn.dataset.model;
+    chatMode = btn.dataset.mode;
+    document.getElementById('model-select-wrap').style.opacity = chatMode==='router' ? '.35' : '1';
+    document.getElementById('model-select-wrap').style.pointerEvents = chatMode==='router' ? 'none' : '';
   });
 });
 
@@ -762,339 +603,384 @@ const messagesEl  = document.getElementById('messages');
 const emptyState  = document.getElementById('empty-state');
 const promptInput = document.getElementById('prompt-input');
 const sendBtn     = document.getElementById('send-btn');
+const routingBanner = document.getElementById('routing-banner');
+let isGenerating  = false;
 
-promptInput.addEventListener('input', () => {
-  promptInput.style.height = 'auto';
-  promptInput.style.height = Math.min(promptInput.scrollHeight, 140) + 'px';
+promptInput.addEventListener('input',()=>{
+  promptInput.style.height='auto';
+  promptInput.style.height=Math.min(promptInput.scrollHeight,140)+'px';
 });
-
-promptInput.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendMessage();
-});
-
+promptInput.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') sendMessage(); });
 sendBtn.addEventListener('click', sendMessage);
 
-function appendMessage(role, content, meta = null) {
-  if (emptyState.parentNode === messagesEl) messagesEl.removeChild(emptyState);
-
+function appendMessage(role, content, meta=null) {
+  if (emptyState.parentNode===messagesEl) messagesEl.removeChild(emptyState);
   const wrap = document.createElement('div');
-  wrap.className = `message ${role}`;
-
-  const label = role === 'user' ? 'YOU' : role === 'model' ? 'MODEL' : 'ERROR';
-  const avatar = role === 'user' ? 'U' : role === 'model' ? 'AI' : '!';
-
-  wrap.innerHTML = `
+  wrap.className=`message ${role}`;
+  const labels={user:'YOU',model:'MODEL',error:'ERROR'};
+  const avatars={user:'U',model:'AI',error:'!'};
+  const modelTag = meta?.model ? `<span style="color:var(--text3);font-size:9px">· ${escHtml(meta.model.split('/').pop())}</span>` : '';
+  const routedTag = meta?.routed ? `<span class="badge purple">🧠 routed</span>` : '';
+  wrap.innerHTML=`
     <div class="msg-header">
-      <div class="msg-avatar">${avatar}</div>
-      ${label}
-      ${meta?.model ? `<span style="color:var(--text3);font-size:9px">· ${meta.model}</span>` : ''}
+      <div class="msg-avatar">${avatars[role]||'?'}</div>
+      ${labels[role]||role} ${modelTag}
     </div>
-    <div class="msg-body">${role === 'model' ? parseMarkdown(content) : escHtml(content)}</div>
+    <div class="msg-body">${role==='model' ? parseMarkdown(content) : escHtml(content)}</div>
     ${meta ? `<div class="msg-meta">
-      ${meta.latency   != null ? `<span class="badge accent">${meta.latency}s</span>` : ''}
-      ${meta.tokens    != null ? `<span class="badge">${meta.tokens} tok</span>` : ''}
-      ${meta.finish    != null ? `<span class="badge">${meta.finish}</span>` : ''}
+      ${meta.latency!=null?`<span class="badge green">${meta.latency}s</span>`:''}
+      ${meta.tokens!=null?`<span class="badge blue">${meta.tokens} tok</span>`:''}
+      ${meta.task_type&&meta.task_type!=='unknown'?`<span class="badge">${meta.task_type}</span>`:''}
+      ${routedTag}
     </div>` : ''}
   `;
-
   messagesEl.appendChild(wrap);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-  return wrap;
+  messagesEl.scrollTop=messagesEl.scrollHeight;
 }
 
 function appendTyping() {
-  if (emptyState.parentNode === messagesEl) messagesEl.removeChild(emptyState);
-  const wrap = document.createElement('div');
-  wrap.className = 'message model typing';
-  wrap.innerHTML = `
-    <div class="msg-header"><div class="msg-avatar">AI</div> MODEL</div>
-    <div class="msg-body"><div class="typing-dots"><span></span><span></span><span></span></div></div>
-  `;
+  if (emptyState.parentNode===messagesEl) messagesEl.removeChild(emptyState);
+  const wrap=document.createElement('div');
+  wrap.className='message model';
+  wrap.innerHTML=`<div class="msg-header"><div class="msg-avatar">AI</div> MODEL</div>
+    <div class="msg-body"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   messagesEl.appendChild(wrap);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  messagesEl.scrollTop=messagesEl.scrollHeight;
   return wrap;
 }
 
-async function safeFetch(url, options = {}) {
-  const res = await fetch(url, options);
-  const text = await res.text();
-  try {
-    const data = JSON.parse(text);
-    if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
-    return data;
-  } catch (e) {
-    if (!res.ok) throw new Error(`Server error ${res.status} — check Render logs`);
-    throw new Error(`Unexpected response from server`);
-  }
-}
-
 async function sendMessage() {
-  const prompt = promptInput.value.trim();
-  if (!prompt || isGenerating) return;
-
-  isGenerating = true;
-  sendBtn.disabled = true;
-  promptInput.value = '';
-  promptInput.style.height = 'auto';
+  const prompt=promptInput.value.trim();
+  if (!prompt||isGenerating) return;
+  isGenerating=true;
+  sendBtn.disabled=true;
+  promptInput.value='';
+  promptInput.style.height='auto';
+  routingBanner.style.display='none';
 
   appendMessage('user', prompt);
-  const typingEl = appendTyping();
+  const typingEl=appendTyping();
 
   try {
-    const { task_id } = await safeFetch('/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, model: selectedModel }),
-    });
+    let taskId, classification=null;
 
-    const result = await pollTask(task_id);
-    typingEl.remove();
-
-    if (result.status === 'SUCCESS') {
-      const r = result.result;
-      appendMessage('model', r.response, {
-        model:   r.model,
-        latency: r.latency_sec,
-        tokens:  r.total_tokens,
-        finish:  r.finish_reason,
+    if (chatMode==='router') {
+      const routed = await safeFetch('/route',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prompt}),
       });
-      setTimeout(loadMetrics, 800);
+      taskId=routed.task_id;
+      classification=routed.classification;
+      routingBanner.style.display='flex';
+      routingBanner.innerHTML=`
+        🧠 Classified as <strong>${classification.task_type}</strong>
+        (${Math.round((classification.confidence||0)*100)}% confidence) →
+        routing to <strong>${routed.model_label}</strong>
+        <span style="color:var(--text3);font-size:9px;margin-left:4px">${classification.reasoning||''}</span>
+      `;
     } else {
-      appendMessage('error', result.error || 'Task failed.');
+      const model=document.getElementById('model-select').value;
+      const res=await safeFetch('/generate',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prompt, model}),
+      });
+      taskId=res.task_id;
     }
 
-  } catch (err) {
+    const result=await pollTask(taskId);
+    typingEl.remove();
+
+    if (result.status==='SUCCESS') {
+      const r=result.result;
+      appendMessage('model', r.response, {
+        model:     r.model,
+        latency:   r.latency_sec,
+        tokens:    r.total_tokens,
+        task_type: r.task_type,
+        routed:    r.routed,
+      });
+      setTimeout(loadSideMetrics, 600);
+    } else {
+      appendMessage('error', result.error||'Task failed.');
+    }
+  } catch(err) {
     typingEl.remove();
     appendMessage('error', err.message);
   }
 
-  isGenerating = false;
-  sendBtn.disabled = false;
+  isGenerating=false;
+  sendBtn.disabled=false;
   promptInput.focus();
 }
 
-async function pollTask(taskId, maxAttempts = 60) {
-  for (let i = 0; i < maxAttempts; i++) {
-    await sleep(1000);
-    try {
-      const data = await safeFetch(`/status/${taskId}`);
-      if (data.status === 'SUCCESS' || data.status === 'FAILURE') return data;
-    } catch (e) {
-    }
-  }
-  throw new Error('Timed out — task took too long. Check worker logs.');
-}
+const sideScroll = document.getElementById('side-scroll');
+const sideNodata = document.getElementById('side-nodata');
 
-const metricsScroll = document.getElementById('metrics-scroll');
-const noMetrics     = document.getElementById('no-metrics');
-const refreshBtn    = document.getElementById('refresh-btn');
-const refreshIcon   = document.getElementById('refresh-icon');
+document.getElementById('refresh-btn').addEventListener('click', loadSideMetrics);
 
-refreshBtn.addEventListener('click', loadMetrics);
-
-async function loadMetrics() {
-  refreshIcon.className = 'spin';
+async function loadSideMetrics() {
+  const icon=document.getElementById('refresh-icon');
+  icon.className='spin'; icon.textContent='↺';
   try {
-    const res  = await fetch('/metrics');
-    const data = await res.json();
-    renderMetrics(data);
-  } catch (e) {
-    console.warn('Metrics fetch failed', e);
-  } finally {
-    refreshIcon.className = '';
-    refreshIcon.textContent = '↺';
-  }
+    const d=await safeFetch('/metrics');
+    renderSideMetrics(d);
+  } catch(_) {}
+  finally { icon.className=''; icon.textContent='↺'; }
 }
 
-function renderMetrics(data) {
-  const { runs = [], summary = {} } = data;
+function renderSideMetrics({runs=[],summary={}}) {
+  sideScroll.innerHTML='';
+  if (!runs.length) { sideScroll.innerHTML='<div class="no-data" style="padding:20px;text-align:center;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text3)">No runs yet.</div>'; return; }
 
-  metricsScroll.innerHTML = '';
-
-  if (runs.length === 0) {
-    metricsScroll.innerHTML = '<div class="no-metrics">No runs yet.<br/>Send a prompt to see metrics.</div>';
-    return;
-  }
-
-  const grid = document.createElement('div');
-  grid.className = 'stat-grid';
-  grid.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Total Runs</div>
-      <div class="stat-value accent">${summary.total_runs ?? 0}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Avg Latency</div>
-      <div class="stat-value accent2">${summary.avg_latency_sec ?? '—'}s</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Tokens</div>
-      <div class="stat-value">${fmtNum(summary.total_tokens_used)}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Avg Tokens</div>
-      <div class="stat-value accent3">${summary.avg_tokens_per_run ?? '—'}</div>
-    </div>
+  const grid=document.createElement('div'); grid.className='stat-grid';
+  grid.innerHTML=`
+    <div class="stat-card"><div class="stat-label">Runs</div><div class="stat-value c1">${summary.total_runs||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value c2">${summary.avg_latency_sec||0}s</div></div>
+    <div class="stat-card"><div class="stat-label">Total Tokens</div><div class="stat-value">${fmtNum(summary.total_tokens_used)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Tokens</div><div class="stat-value c4">${summary.avg_tokens_per_run||0}</div></div>
   `;
-  metricsScroll.appendChild(grid);
+  sideScroll.appendChild(grid);
 
-  const latencies = runs.map(r => r.latency_sec).filter(Boolean).reverse();
-  if (latencies.length > 1) {
-    const wrap = document.createElement('div');
-    wrap.className = 'sparkline-wrap';
-    wrap.innerHTML = `
-      <div class="sparkline-label">Latency trend (last ${latencies.length} runs)</div>
-      <canvas id="sparkline" height="48"></canvas>
-    `;
-    metricsScroll.appendChild(wrap);
-    requestAnimationFrame(() => drawSparkline(latencies));
+  const lats=runs.map(r=>r.latency_sec).filter(Boolean).reverse();
+  if (lats.length>1) {
+    const sw=document.createElement('div'); sw.className='sparkline-wrap';
+    sw.innerHTML=`<div class="sparkline-label">Latency trend</div><canvas id="sparkline" height="46"></canvas>`;
+    sideScroll.appendChild(sw);
+    requestAnimationFrame(()=>drawSparkline(lats));
   }
 
-  const labelEl = document.createElement('div');
-  labelEl.className = 'section-label';
-  labelEl.textContent = 'Recent Runs';
-  metricsScroll.appendChild(labelEl);
+  const sep=document.createElement('div'); sep.className='section-sep'; sep.textContent='Recent';
+  sideScroll.appendChild(sep);
 
-  const logEl = document.createElement('div');
-  logEl.className = 'run-log';
-
-  runs.slice(0, 20).forEach(run => {
-    const row = document.createElement('div');
-    row.className = 'run-row';
-    const ts = run.start_time ? new Date(run.start_time).toLocaleTimeString() : '—';
-    row.innerHTML = `
-      <div class="run-row-left">
-        <div class="run-model">${run.model}</div>
-        <div class="run-time">${ts} · ${run.total_tokens ?? '—'} tok</div>
-      </div>
-      <div class="run-latency">${run.latency_sec != null ? run.latency_sec + 's' : '—'}</div>
+  const log=document.createElement('div'); log.className='run-log';
+  runs.slice(0,15).forEach(run=>{
+    const row=document.createElement('div'); row.className='run-row';
+    const ts=run.start_time?new Date(run.start_time).toLocaleTimeString():'—';
+    const label=run.model.split('/').pop();
+    row.innerHTML=`
+      <div><div class="run-model">${escHtml(label)}</div>
+        <div class="run-meta"><span>${ts}</span><span>${run.task_type||''}</span></div></div>
+      <div class="run-latency">${run.latency_sec!=null?run.latency_sec+'s':'—'}</div>
     `;
-    logEl.appendChild(row);
+    log.appendChild(row);
   });
-
-  metricsScroll.appendChild(logEl);
+  sideScroll.appendChild(log);
 }
 
 function drawSparkline(values) {
-  const canvas = document.getElementById('sparkline');
+  const canvas=document.getElementById('sparkline');
   if (!canvas) return;
-
-  canvas.width  = canvas.offsetWidth * window.devicePixelRatio;
-  canvas.height = 48 * window.devicePixelRatio;
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-  const W = canvas.offsetWidth;
-  const H = 48;
-  const pad = 4;
-
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-
-  const toX = i => pad + (i / (values.length - 1)) * (W - pad * 2);
-  const toY = v => H - pad - ((v - min) / range) * (H - pad * 2);
-
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, 'rgba(0,212,170,0.25)');
-  grad.addColorStop(1, 'rgba(0,212,170,0)');
-
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(values[0]));
-  values.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
-  ctx.lineTo(toX(values.length - 1), H);
-  ctx.lineTo(toX(0), H);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(values[0]));
-  values.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
-  ctx.strokeStyle = '#00d4aa';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  const lx = toX(values.length - 1);
-  const ly = toY(values[values.length - 1]);
-  ctx.beginPath();
-  ctx.arc(lx, ly, 3, 0, Math.PI * 2);
-  ctx.fillStyle = '#00d4aa';
-  ctx.fill();
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio;
+  canvas.height=46*window.devicePixelRatio;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  const W=canvas.offsetWidth,H=46,p=4;
+  const mn=Math.min(...values),mx=Math.max(...values),rng=mx-mn||1;
+  const tx=i=>p+(i/(values.length-1))*(W-p*2);
+  const ty=v=>H-p-((v-mn)/rng)*(H-p*2);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgba(0,212,170,.25)'); g.addColorStop(1,'rgba(0,212,170,0)');
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(values[0]));
+  values.forEach((v,i)=>{ if(i) ctx.lineTo(tx(i),ty(v)); });
+  ctx.lineTo(tx(values.length-1),H); ctx.lineTo(tx(0),H); ctx.closePath();
+  ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(values[0]));
+  values.forEach((v,i)=>{ if(i) ctx.lineTo(tx(i),ty(v)); });
+  ctx.strokeStyle='#00d4aa'; ctx.lineWidth=1.5; ctx.stroke();
+  const lx=tx(values.length-1),ly=ty(values[values.length-1]);
+  ctx.beginPath(); ctx.arc(lx,ly,3,0,Math.PI*2); ctx.fillStyle='#00d4aa'; ctx.fill();
 }
 
-const sleep   = ms => new Promise(r => setTimeout(r, ms));
-const fmtNum  = n => n != null ? Number(n).toLocaleString() : '—';
-const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const arenaGrid  = document.getElementById('arena-grid');
+const arenaInput = document.getElementById('arena-input');
+const arenaBtn   = document.getElementById('arena-btn');
 
-function parseMarkdown(text) {
-  let html = escHtml(text);
+arenaInput.addEventListener('input',()=>{
+  arenaInput.style.height='auto';
+  arenaInput.style.height=Math.min(arenaInput.scrollHeight,140)+'px';
+});
+arenaInput.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') runArena(); });
 
-  html = html.replace(/```([\w]*)?\n?([\s\S]*?)```/g, (_, lang, code) => {
-    const l = lang ? ` data-lang="${escHtml(lang)}"` : '';
-    return `<pre${l}><code>${code.trim()}</code></pre>`;
+document.querySelectorAll('.arena-model-toggle').forEach(btn=>{
+  btn.addEventListener('click',()=>btn.classList.toggle('selected'));
+});
+
+arenaBtn.addEventListener('click', runArena);
+
+async function runArena() {
+  const prompt=arenaInput.value.trim();
+  if (!prompt) return;
+
+  const selected=[...document.querySelectorAll('.arena-model-toggle.selected')].map(b=>b.dataset.model);
+  if (!selected.length) { alert('Select at least one model.'); return; }
+
+  arenaBtn.disabled=true;
+  arenaGrid.innerHTML='';
+
+  const cards={};
+  selected.forEach(model=>{
+    const label=model.split('/').pop();
+    const card=document.createElement('div');
+    card.className='arena-card running';
+    card.innerHTML=`
+      <div class="arena-card-header">
+        <div class="arena-card-model">${escHtml(label)}</div>
+        <span class="winner-crown">🏆</span>
+        <span class="arena-card-status status-running">running…</span>
+      </div>
+      <div class="arena-card-body">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="arena-card-footer"></div>
+    `;
+    arenaGrid.appendChild(card);
+    cards[model]=card;
   });
 
-  html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  try {
+    const { tasks } = await safeFetch('/arena',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt, models:selected}),
+    });
 
-  html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-  html = html.replace(/^#####\s+(.+)$/gm,  '<h5>$1</h5>');
-  html = html.replace(/^####\s+(.+)$/gm,   '<h4>$1</h4>');
-  html = html.replace(/^###\s+(.+)$/gm,    '<h3>$1</h3>');
-  html = html.replace(/^##\s+(.+)$/gm,     '<h2>$1</h2>');
-  html = html.replace(/^#\s+(.+)$/gm,      '<h1>$1</h1>');
+    let firstDone=null;
+    const promises=Object.entries(tasks).map(async ([model, info])=>{
+      const card=cards[model];
+      try {
+        const result=await pollTask(info.task_id);
+        if (result.status==='SUCCESS') {
+          const r=result.result;
+          if (!firstDone) firstDone=model;
+          card.className='arena-card'+(firstDone===model?' winner':'');
+          card.querySelector('.arena-card-status').className='arena-card-status status-done';
+          card.querySelector('.arena-card-status').textContent='done';
+          card.querySelector('.arena-card-body').innerHTML=
+            `<div class="msg-body">${parseMarkdown(r.response)}</div>`;
+          card.querySelector('.arena-card-footer').innerHTML=`
+            <span class="badge green">${r.latency_sec}s</span>
+            <span class="badge blue">${r.total_tokens} tok</span>
+            <span class="badge">${r.finish_reason||''}</span>
+            ${firstDone===model?'<span class="badge green">🏆 fastest</span>':''}
+          `;
+        } else {
+          card.className='arena-card';
+          card.querySelector('.arena-card-status').className='arena-card-status status-error';
+          card.querySelector('.arena-card-status').textContent='error';
+          card.querySelector('.arena-card-body').textContent=result.error||'Failed';
+        }
+      } catch(e) {
+        card.className='arena-card';
+        card.querySelector('.arena-card-status').className='arena-card-status status-error';
+        card.querySelector('.arena-card-status').textContent='error';
+        card.querySelector('.arena-card-body').textContent=e.message;
+      }
+    });
 
-  html = html.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+    await Promise.all(promises);
+    setTimeout(loadLeaderboard, 1000);
 
-  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  html = html.replace(/\*\*(.+?)\*\*/g,       '<strong>$1</strong>');
-  html = html.replace(/\*(.+?)\*/g,            '<em>$1</em>');
-  html = html.replace(/\_\_(.+?)\_\_/g,       '<strong>$1</strong>');
-  html = html.replace(/\_(.+?)\_/g,            '<em>$1</em>');
+  } catch(e) {
+    arenaGrid.innerHTML=`<div class="arena-empty"><div class="empty-icon">⚠️</div><p>${escHtml(e.message)}</p></div>`;
+  }
 
-  html = html.replace(/^[-*_]{3,}\s*$/gm, '<hr>');
+  arenaBtn.disabled=false;
+}
 
-  html = html.replace(/((?:^[\-\*]\s+.+\n?)+)/gm, match => {
-    const items = match.trim().split('\n')
-      .map(l => `<li>${l.replace(/^[\-\*]\s+/, '')}</li>`)
-      .join('');
-    return `<ul>${items}</ul>`;
+document.getElementById('lb-refresh-btn').addEventListener('click', loadLeaderboard);
+
+async function loadLeaderboard() {
+  const icon=document.getElementById('lb-refresh-icon');
+  icon.className='spin';
+  try {
+    const d=await safeFetch('/metrics');
+    renderLeaderboard(d);
+  } catch(e) {
+    document.getElementById('lb-content').innerHTML=`<div class="no-data">${escHtml(e.message)}</div>`;
+  }
+  finally { icon.className=''; }
+}
+
+function renderLeaderboard({runs=[],summary={},leaderboard=[]}) {
+  const el=document.getElementById('lb-content');
+
+  if (!leaderboard.length) {
+    el.innerHTML='<div class="no-data">No data yet — run some prompts first.</div>';
+    return;
+  }
+
+  const strip=`
+    <div class="summary-strip">
+      <div class="summary-card"><div class="label">Total Runs</div><div class="value" style="color:var(--accent)">${summary.total_runs||0}</div></div>
+      <div class="summary-card"><div class="label">Avg Latency</div><div class="value" style="color:var(--accent2)">${summary.avg_latency_sec||0}s</div></div>
+      <div class="summary-card"><div class="label">Best Latency</div><div class="value" style="color:var(--success)">${summary.min_latency_sec||0}s</div></div>
+      <div class="summary-card"><div class="label">Total Tokens</div><div class="value" style="color:var(--accent4)">${fmtNum(summary.total_tokens_used)}</div></div>
+    </div>`;
+
+  const rows=leaderboard.map((m,i)=>{
+    const rank=i+1;
+    const rankClass=rank<=3?`rank-${rank}`:'rank-n';
+    const rankText=rank<=3?rank:'#'+rank;
+    return `
+      <tr>
+        <td><div class="rank-badge ${rankClass}">${rankText}</div></td>
+        <td class="model-name-cell">${escHtml(m.model_label||m.model.split('/').pop())}</td>
+        <td>${m.runs}</td>
+        <td style="color:var(--accent);font-weight:600">${m.avg_latency_sec!=null?m.avg_latency_sec+'s':'—'}</td>
+        <td>${m.avg_tokens!=null?m.avg_tokens:'—'}</td>
+        <td>
+          <div class="win-bar-wrap">
+            <div class="win-bar"><div class="win-bar-fill" style="width:${m.win_rate||0}%"></div></div>
+            <span class="win-pct">${m.win_rate||0}%</span>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const table=`
+    <div class="lb-table-wrap">
+      <table class="lb-table">
+        <thead><tr>
+          <th>Rank</th><th>Model</th><th>Runs</th>
+          <th>Avg Latency</th><th>Avg Tokens</th><th>Win Rate</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  const taskMap={};
+  runs.forEach(r=>{
+    if (!r.task_type||r.task_type==='unknown'||r.task_type==='arena') return;
+    if (!taskMap[r.task_type]) taskMap[r.task_type]={count:0,models:{}};
+    taskMap[r.task_type].count++;
+    taskMap[r.task_type].models[r.model]=(taskMap[r.task_type].models[r.model]||0)+1;
   });
 
-  html = html.replace(/((?:^\d+\.\s+.+\n?)+)/gm, match => {
-    const items = match.trim().split('\n')
-      .map(l => `<li>${l.replace(/^\d+\.\s+/, '')}</li>`)
-      .join('');
-    return `<ol>${items}</ol>`;
-  });
+  const typeColors={code:'#3d8ef0',reasoning:'#a855f7',analysis:'#f06040',factual:'#00d4aa',summarization:'#f0a020',creative:'#e040fb'};
+  const chips=Object.entries(taskMap).map(([type,{count,models}])=>{
+    const topModel=Object.entries(models).sort((a,b)=>b[1]-a[1])[0];
+    const modelLabel=topModel?topModel[0].split('/').pop():'—';
+    return `<div class="task-chip">
+      <div class="task-chip-dot" style="background:${typeColors[type]||'var(--text3)'}"></div>
+      <span class="task-chip-label">${type}</span>
+      <span class="task-chip-model">→ ${modelLabel}</span>
+      <span class="task-chip-count">${count}</span>
+    </div>`;
+  }).join('');
 
-  html = html.replace(/((?:^\|.+\|\n?)+)/gm, match => {
-    const rows = match.trim().split('\n').filter(r => !/^\|[-|\s]+\|$/.test(r.trim()));
-    if (rows.length < 1) return match;
-    const toTds = (row, tag) => row.replace(/^\|/, '').replace(/\|$/, '')
-      .split('|').map(c => `<${tag}>${c.trim()}</${tag}>`).join('');
-    const head = `<tr>${toTds(rows[0], 'th')}</tr>`;
-    const body = rows.slice(1).map(r => `<tr>${toTds(r, 'td')}</tr>`).join('');
-    return `<table>${head}${body}</table>`;
-  });
+  const breakdown=chips?`
+    <div class="task-breakdown">
+      <h3>Routing breakdown by task type</h3>
+      <div class="task-chips">${chips}</div>
+    </div>`:'';
 
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-  html = html.split(/\n{2,}/).map(block => {
-    const trimmed = block.trim();
-    if (!trimmed) return '';
-    if (/^<(h[1-6]|ul|ol|li|blockquote|pre|table|hr)/.test(trimmed)) return trimmed;
-    // wrap plain text lines as paragraph, convert single newlines to <br>
-    return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
-  }).join('\n');
-
-  return html;
+  el.innerHTML=strip+table+breakdown;
 }
 
 checkHealth();
-loadMetrics();
+loadSideMetrics();
 setInterval(checkHealth, 30000);
 </script>
 </body>
