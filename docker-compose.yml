@@ -1,39 +1,31 @@
 services:
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: redis
     ports:
       - "6379:6379"
     networks:
       - llm-network
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    networks:
-      - llm-network
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        ollama serve & 
-        sleep 5
-        ollama pull llama3
-        wait
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mlflow:
     build: ./mlflow
     container_name: mlflow
     ports:
       - "5000:5000"
-    volumes:
-      - ./mlflow/mlruns:/mlflow/mlruns
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
     networks:
       - llm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
@@ -43,9 +35,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - redis
-      - mlflow
-      - ollama
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
     networks:
       - llm-network
 
@@ -55,18 +48,14 @@ services:
     command: celery -A app.celery_worker worker --pool=solo --loglevel=info
     env_file:
       - .env
-    volumes:
-      - ./mlflow/mlruns:/mlflow/mlruns 
     depends_on:
-      - redis
-      - mlflow
-      - ollama
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
     networks:
       - llm-network
 
 networks:
   llm-network:
     driver: bridge
-
-volumes:
-  ollama-data:

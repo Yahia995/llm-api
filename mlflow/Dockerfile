@@ -2,15 +2,14 @@ FROM python:3.10-slim
 
 WORKDIR /mlflow
 
-RUN pip install mlflow
+RUN pip install --no-cache-dir mlflow psycopg2-binary
 
 EXPOSE 5000
 
-# Store EVERYTHING under /mlflow (which will be mounted as a volume)
 CMD mlflow server \
     --host 0.0.0.0 \
     --port 5000 \
-    --backend-store-uri sqlite:////mlflow/mlflow.db \
-    --default-artifact-root /mlflow/mlruns \
+    --backend-store-uri ${DATABASE_URL} \
+    --default-artifact-root /mlflow/artifacts \
     --serve-artifacts \
     --allowed-hosts '*'

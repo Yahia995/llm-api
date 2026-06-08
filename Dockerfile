@@ -1,9 +1,6 @@
 FROM python:3.10-slim
 
-# Prevent Python from writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
-
-# Output logs immediately (no buffering)
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app

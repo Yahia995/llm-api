@@ -7,3 +7,4 @@ redis==5.2.1
 mlflow-skinny==2.19.0
 groq==0.13.1
 psycopg2-binary==2.9.10
+aiofiles==24.1.0

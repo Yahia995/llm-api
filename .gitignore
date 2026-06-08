@@ -2,7 +2,6 @@ __pycache__/
 venv/
 .env
 .git/
-.gitignore
 mlruns/
 mlflow/mlruns/
 mlflow.db
